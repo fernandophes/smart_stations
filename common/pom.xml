@@ -17,10 +17,4 @@
     <name>common</name>
     <description>Módulo comum com código compartilhado entre os demais artefatos</description>
 
-    <!-- Propriedades -->
-    <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-    </properties>
-
 </project>
