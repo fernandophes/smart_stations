@@ -14,7 +14,7 @@
     <!-- Informações sobre o projeto -->
     <artifactId>common</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>common</name>
+    <name>Biblioteca de Código Compartilhado</name>
     <description>Módulo comum com código compartilhado entre os demais artefatos</description>
 
 </project>
