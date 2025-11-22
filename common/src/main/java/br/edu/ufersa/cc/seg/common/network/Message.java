@@ -16,6 +16,16 @@ public abstract class Message implements Serializable {
     private final Operation operation;
 
     @SneakyThrows
+    public static <M extends Message> M fromBytes(final byte[] bytes, final Class<M> messageType) {
+        return MAPPER.readValue(bytes, messageType);
+    }
+
+    @SneakyThrows
+    public static <M extends Message> M fromJson(final String json, final Class<M> messageType) {
+        return MAPPER.readValue(json, messageType);
+    }
+
+    @SneakyThrows
     public byte[] toBytes() {
         return MAPPER.writeValueAsBytes(this);
     }
