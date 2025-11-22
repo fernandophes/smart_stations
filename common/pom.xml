@@ -17,4 +17,13 @@
     <name>Biblioteca de Código Compartilhado</name>
     <description>Módulo comum com código compartilhado entre os demais artefatos</description>
 
+    <dependencies>
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.42</version>
+        </dependency>
+    </dependencies>
+
 </project>
