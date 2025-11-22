@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -12,6 +13,7 @@ import lombok.SneakyThrows;
 /**
  * Interface comum para comunicação segura entre processos
  */
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class Messenger implements Closeable {
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -44,11 +46,13 @@ public abstract class Messenger implements Closeable {
         }
     }
 
-    abstract void send(Message message) throws IOException;
+    protected final CryptoService cryptoService;
 
-    abstract <M extends Message> M receiveAs(Class<M> messageType) throws IOException;
+    public abstract void send(Message message) throws IOException;
 
-    <M extends Message> Subscription<M> subscribe(Class<M> messageType, Consumer<M> consumer) {
+    public abstract <M extends Message> M receiveAs(Class<M> messageType) throws IOException;
+
+    public <M extends Message> Subscription<M> subscribe(Class<M> messageType, Consumer<M> consumer) {
         final var subscription = new Subscription<>(messageType, consumer);
         subscription.start();
 
