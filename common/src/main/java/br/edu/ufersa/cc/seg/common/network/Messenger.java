@@ -3,12 +3,11 @@ package br.edu.ufersa.cc.seg.common.network;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 
 /**
  * Interface comum para comunicação segura entre processos
@@ -17,9 +16,8 @@ import lombok.SneakyThrows;
 public abstract class Messenger implements Closeable {
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-    public class Subscription<M extends Message> implements Closeable {
-        private final Class<M> messageType;
-        private final Consumer<M> consumer;
+    public class Subscription implements Closeable {
+        private final Function<Message, Message> callback;
         private Thread thread;
 
         private AtomicBoolean isRunning = new AtomicBoolean(false);
@@ -29,14 +27,11 @@ public abstract class Messenger implements Closeable {
 
             thread = new Thread(() -> {
                 while (isRunning.get()) {
-                    readAndConsume();
+                    final var request = receive();
+                    final var response = callback.apply(request);
+                    send(response);
                 }
             });
-        }
-
-        @SneakyThrows
-        private void readAndConsume() {
-            consumer.accept(receiveAs(messageType));
         }
 
         @Override
@@ -48,12 +43,12 @@ public abstract class Messenger implements Closeable {
 
     protected final CryptoService cryptoService;
 
-    public abstract void send(Message message) throws IOException;
+    public abstract void send(Message message);
 
-    public abstract <M extends Message> M receiveAs(Class<M> messageType) throws IOException;
+    public abstract Message receive();
 
-    public <M extends Message> Subscription<M> subscribe(Class<M> messageType, Consumer<M> consumer) {
-        final var subscription = new Subscription<>(messageType, consumer);
+    public Subscription subscribe(Function<Message, Message> callback) {
+        final var subscription = new Subscription(callback);
         subscription.start();
 
         return subscription;

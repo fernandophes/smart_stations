@@ -8,6 +8,7 @@ import java.net.Socket;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
+import lombok.SneakyThrows;
 
 public class TcpMessenger extends Messenger {
 
@@ -31,21 +32,21 @@ public class TcpMessenger extends Messenger {
         this(serverSocket.accept(), cryptoService);
     }
 
-    public void send(final Message message) throws IOException {
+    @Override
+    @SneakyThrows
+    public void send(final Message message) {
         final var secureMsg = cryptoService.encrypt(message.toBytes());
         out.writeObject(secureMsg);
         out.flush();
     }
 
-    public <M extends Message> M receiveAs(Class<M> messageType) throws IOException {
-        try {
-            final var secureMsg = (SecureMessage) in.readObject();
-            final var messageAsBytes = cryptoService.decrypt(secureMsg);
+    @Override
+    @SneakyThrows
+    public Message receive() {
+        final var secureMsg = (SecureMessage) in.readObject();
+        final var messageAsBytes = cryptoService.decrypt(secureMsg);
 
-            return Message.fromBytes(messageAsBytes, messageType);
-        } catch (final ClassNotFoundException e) {
-            throw new IOException("Erro ao deserializar mensagem", e);
-        }
+        return Message.fromBytes(messageAsBytes);
     }
 
     @Override

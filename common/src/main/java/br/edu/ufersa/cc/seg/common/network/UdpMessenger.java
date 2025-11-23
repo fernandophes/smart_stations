@@ -7,6 +7,7 @@ import java.net.InetAddress;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
+import lombok.SneakyThrows;
 
 public class UdpMessenger extends Messenger {
 
@@ -22,8 +23,13 @@ public class UdpMessenger extends Messenger {
         this(new DatagramSocket(port, InetAddress.getByName(host)), cryptoService);
     }
 
+    public UdpMessenger(final int port, final CryptoService cryptoService) throws IOException {
+        this(new DatagramSocket(port), cryptoService);
+    }
+
     @Override
-    public void send(final Message message) throws IOException {
+    @SneakyThrows
+    public void send(final Message message) {
         final var secureMsg = cryptoService.encrypt(message.toBytes()).toBytes();
         final var packet = new DatagramPacket(secureMsg, secureMsg.length);
 
@@ -31,7 +37,8 @@ public class UdpMessenger extends Messenger {
     }
 
     @Override
-    public <M extends Message> M receiveAs(final Class<M> messageType) throws IOException {
+    @SneakyThrows
+    public Message receive() {
         final var bytes = new byte[256];
         final var packet = new DatagramPacket(bytes, bytes.length);
         socket.receive(packet);
@@ -39,7 +46,7 @@ public class UdpMessenger extends Messenger {
         final var secureMsg = SecureMessage.fromBytes(packet.getData());
         final var messageAsBytes = cryptoService.decrypt(secureMsg);
 
-        return Message.fromBytes(messageAsBytes, messageType);
+        return Message.fromBytes(messageAsBytes);
     }
 
     @Override

@@ -1,28 +1,31 @@
 package br.edu.ufersa.cc.seg.common.network;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import br.edu.ufersa.cc.seg.common.utils.Operation;
+import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import lombok.Data;
 import lombok.SneakyThrows;
 
 @Data
-public abstract class Message implements Serializable {
+public class Message implements Serializable {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private final Operation operation;
+    private final MessageType type;
+    private final Map<String, Object> values = new HashMap<>();
 
     @SneakyThrows
-    public static <M extends Message> M fromBytes(final byte[] bytes, final Class<M> messageType) {
-        return MAPPER.readValue(bytes, messageType);
+    public static Message fromBytes(final byte[] bytes) {
+        return MAPPER.readValue(bytes, Message.class);
     }
 
     @SneakyThrows
-    public static <M extends Message> M fromJson(final String json, final Class<M> messageType) {
-        return MAPPER.readValue(json, messageType);
+    public static Message fromJson(final String json) {
+        return MAPPER.readValue(json, Message.class);
     }
 
     @SneakyThrows
@@ -33,6 +36,11 @@ public abstract class Message implements Serializable {
     @SneakyThrows
     public String toJson() {
         return MAPPER.writeValueAsString(this);
+    }
+
+    public Message withValue(final String key, final Object value) {
+        values.put(key, value);
+        return this;
     }
 
 }
