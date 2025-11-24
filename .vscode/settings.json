@@ -1,6 +1,7 @@
 {
     "java.configuration.updateBuildConfiguration": "automatic",
     "conventionalCommits.scopes": [
-        "location_server"
+        "location_server",
+        "edge_server"
     ]
 }
