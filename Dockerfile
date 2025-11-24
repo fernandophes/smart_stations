@@ -34,7 +34,7 @@ ARG MODULE_NAME
 
 # Copia o JAR gerado no estágio anterior
 # O caminho é dinâmico: /app/<nome-do-modulo>/target/*.jar
-COPY --from=build /app/${MODULE_NAME}/target/*.jar app.jar
+COPY --from=build /app/${MODULE_NAME}/target/*-jar-with-dependencies.jar app.jar
 
 # Comando para iniciar a aplicação
 ENTRYPOINT ["java", "-jar", "app.jar"]
