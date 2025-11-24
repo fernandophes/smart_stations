@@ -6,7 +6,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class MessageFactory {
+public abstract class MessageFactory {
 
     public static Message ok() {
         return new Message(MessageType.OK);

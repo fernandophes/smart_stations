@@ -1,13 +1,32 @@
 services:
-
   location-server:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        MODULE_NAME: location_server  # <--- Nome exato da pasta do módulo
+        MODULE_NAME: location_server # <--- Nome exato da pasta do módulo
     container_name: location_server
     env_file:
       - .env
+    environment:
+      - PORT=8484
     ports:
-      - "8080:8080"
+      - "8484:8484"
+
+  edge-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: edge_server # <--- Nome exato da pasta do módulo
+    container_name: edge_server
+    env_file:
+      - .env
+    environment:
+      - PORT=8485
+      - LOCATION_HOST=location-server
+      - LOCATION_PORT=8484
+    ports:
+      - "8485:8485"
+    depends_on:
+      - location-server

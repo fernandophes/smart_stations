@@ -8,7 +8,6 @@ import java.util.function.Function;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -39,11 +38,6 @@ public abstract class Messenger implements Closeable {
             });
 
             thread.start();
-        }
-
-        @SneakyThrows
-        public void join() {
-            thread.join();
         }
 
         @Override

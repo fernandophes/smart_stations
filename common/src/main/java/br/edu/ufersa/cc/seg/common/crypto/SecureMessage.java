@@ -4,15 +4,21 @@ import java.io.Serializable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Representa uma mensagem segura que inclui o conteúdo cifrado,
  * HMAC para integridade/autenticidade, e outros metadados necessários.
  */
+@Slf4j
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class SecureMessage implements Serializable {
 
