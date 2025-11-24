@@ -10,7 +10,9 @@ import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.network.Messenger;
 import br.edu.ufersa.cc.seg.common.network.UdpMessenger;
+import br.edu.ufersa.cc.seg.common.network.Messenger.Subscription;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -23,13 +25,14 @@ public class LocationServer {
 
     private final Map<ServerType, InetAddress> addresses = new HashMap<>();
     private final Messenger messenger;
+    private Subscription subscription;
 
     public LocationServer(final int port, final CryptoService cryptoService) throws IOException {
         this.messenger = new UdpMessenger(port, cryptoService);
     }
 
     public void start() {
-        messenger.subscribe(request -> {
+        subscription = messenger.subscribe(request -> {
             switch (request.getType()) {
                 case REGISTER_SERVER: {
                     final var serverType = (ServerType) request.getValues().get(Fields.SERVER_TYPE);
@@ -71,6 +74,12 @@ public class LocationServer {
 
     public void remove(final ServerType serverType) {
         addresses.remove(serverType);
+    }
+
+    @SneakyThrows
+    public void stop() {
+        subscription.close();
+        subscription = null;
     }
 
 }

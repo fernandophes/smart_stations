@@ -1,0 +1,11 @@
+services:
+
+  location-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: location_server  # <--- Nome exato da pasta do módulo
+    container_name: location_server
+    ports:
+      - "8080:8080"

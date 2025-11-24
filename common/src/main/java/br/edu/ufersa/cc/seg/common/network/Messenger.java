@@ -8,10 +8,13 @@ import java.util.function.Function;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Interface comum para comunicação segura entre processos
  */
+@Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class Messenger implements Closeable {
 
@@ -27,11 +30,20 @@ public abstract class Messenger implements Closeable {
 
             thread = new Thread(() -> {
                 while (isRunning.get()) {
+                    log.info("Aguardando requisições...");
+
                     final var request = receive();
                     final var response = callback.apply(request);
                     send(response);
                 }
             });
+
+            thread.start();
+        }
+
+        @SneakyThrows
+        public void join() {
+            thread.join();
         }
 
         @Override
@@ -47,7 +59,7 @@ public abstract class Messenger implements Closeable {
 
     public abstract Message receive();
 
-    public Subscription subscribe(Function<Message, Message> callback) {
+    public Subscription subscribe(final Function<Message, Message> callback) {
         final var subscription = new Subscription(callback);
         subscription.start();
 

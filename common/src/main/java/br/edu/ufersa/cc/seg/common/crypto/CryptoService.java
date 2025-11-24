@@ -2,6 +2,7 @@ package br.edu.ufersa.cc.seg.common.crypto;
 
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.Base64;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -33,6 +34,10 @@ public class CryptoService {
         this.encryptionKey = new SecretKeySpec(encryptionKey, "AES");
         this.hmacKey = new SecretKeySpec(hmacKey, HMAC_ALGORITHM);
         this.secureRandom = new SecureRandom();
+    }
+
+    public CryptoService(final String encryptionKey, final String hmacKey) {
+        this(Base64.getDecoder().decode(encryptionKey), Base64.getDecoder().decode(hmacKey));
     }
 
     /**
