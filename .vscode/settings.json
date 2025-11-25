@@ -4,6 +4,7 @@
         "location_server",
         "edge_server",
         "network",
-        "device"
+        "device",
+        "datacenter"
     ]
 }
