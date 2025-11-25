@@ -3,6 +3,7 @@
     "conventionalCommits.scopes": [
         "location_server",
         "edge_server",
-        "network"
+        "network",
+        "device"
     ]
 }
