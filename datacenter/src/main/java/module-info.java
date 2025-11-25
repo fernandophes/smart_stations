@@ -5,4 +5,5 @@ module datacenter {
 
     requires lombok;
     requires org.slf4j;
+    requires jakarta.persistence;
 }
