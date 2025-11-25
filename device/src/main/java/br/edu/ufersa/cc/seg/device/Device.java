@@ -3,6 +3,7 @@ package br.edu.ufersa.cc.seg.device;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Random;
 import java.util.Timer;
@@ -13,6 +14,7 @@ import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.network.Message;
 import br.edu.ufersa.cc.seg.common.network.Messenger;
 import br.edu.ufersa.cc.seg.common.network.UdpClientMessenger;
+import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
@@ -82,13 +84,14 @@ public class Device {
     }
 
     private Message simulateReading() {
-        final var snapshot = new Message(MessageType.SEND_READING);
+        final var snapshot = new Message(MessageType.SEND_READING)
+                .withValue("timestamp", LocalDateTime.now().format(Constants.DATE_TIME_FORMATTER));
 
         for (final var type : ReadingType.values()) {
             final var raw = RANDOM.nextDouble(type.getMin(), type.getMax());
             final var scaled = BigDecimal.valueOf(raw).setScale(type.getScale(), RoundingMode.HALF_DOWN);
 
-            snapshot.withValue(type.getName(), scaled);
+            snapshot.withValue(type.name(), scaled);
         }
 
         return snapshot;
