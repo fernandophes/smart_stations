@@ -34,10 +34,7 @@ public class LocationServer {
     }
 
     public void start() {
-        messenger.subscribe((client, firstMessage) -> {
-            client.send(handleRequest(firstMessage));
-            client.subscribe(this::handleRequest);
-        });
+        messenger.subscribe(this::handleRequest);
     }
 
     public void register(final ServerType serverType, final String host, final int port) {

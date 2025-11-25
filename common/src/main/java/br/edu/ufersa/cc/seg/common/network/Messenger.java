@@ -24,16 +24,18 @@ public abstract class Messenger implements Closeable {
 
         private AtomicBoolean isRunning = new AtomicBoolean(false);
 
+        public void handleRequest(final Message request) {
+            final var response = callback.apply(request);
+            send(response);
+        }
+
         private void start() {
             isRunning.set(true);
 
             thread = new Thread(() -> {
                 while (isRunning.get()) {
                     log.info("Aguardando requisições...");
-
-                    final var request = receive();
-                    final var response = callback.apply(request);
-                    send(response);
+                    handleRequest(receive());
                 }
             });
 

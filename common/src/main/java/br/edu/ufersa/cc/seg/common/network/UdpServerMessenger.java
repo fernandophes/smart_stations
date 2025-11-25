@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import lombok.AccessLevel;
@@ -19,7 +19,7 @@ public class UdpServerMessenger {
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public class Subscription implements Closeable {
-        private final BiConsumer<UdpClientMessenger, Message> consumer;
+        private final Function<Message, Message> callback;
         private Thread thread;
 
         private AtomicBoolean isRunning = new AtomicBoolean(false);
@@ -34,7 +34,8 @@ public class UdpServerMessenger {
                     final var client = accept();
 
                     log.info("Novo cliente");
-                    consumer.accept(client.getMessenger(), client.getFirstMessage());
+                    final var clientSubscription = client.getMessenger().subscribe(callback);
+                    clientSubscription.handleRequest(client.getFirstMessage());
                 }
             });
 
@@ -77,8 +78,8 @@ public class UdpServerMessenger {
         return new ClientRegistration(client, client.receive(packet));
     }
 
-    public Subscription subscribe(final BiConsumer<UdpClientMessenger, Message> consumer) {
-        final var subscription = new Subscription(consumer);
+    public Subscription subscribe(final Function<Message, Message> callback) {
+        final var subscription = new Subscription(callback);
         subscription.start();
         return subscription;
     }
