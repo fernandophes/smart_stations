@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
       args:
         MODULE_NAME: location_server # <--- Nome exato da pasta do módulo
-    container_name: location_server
+    container_name: location-server
     env_file:
       - .env
     environment:
@@ -21,16 +21,50 @@ services:
       dockerfile: Dockerfile
       args:
         MODULE_NAME: edge_server # <--- Nome exato da pasta do módulo
-    container_name: edge_server
+    container_name: edge-server
     env_file:
       - .env
     environment:
       - LOCATION_HOST=location-server
       - LOCATION_PORT=8484
-    ports:
-      - "8485:8485"
     depends_on:
       - location-server
+    networks:
+      - smart-stations
+
+  poste:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: device # <--- Nome exato da pasta do módulo
+    container_name: poste
+    env_file:
+      - .env
+    environment:
+      - DEVICE_NAME=Poste
+      - LOCATION_HOST=location-server
+      - LOCATION_PORT=8484
+    depends_on:
+      - edge-server
+    networks:
+      - smart-stations
+
+  semaforo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: device # <--- Nome exato da pasta do módulo
+    container_name: semaforo
+    env_file:
+      - .env
+    environment:
+      - DEVICE_NAME=Semáforo
+      - LOCATION_HOST=location-server
+      - LOCATION_PORT=8484
+    depends_on:
+      - edge-server
     networks:
       - smart-stations
 
