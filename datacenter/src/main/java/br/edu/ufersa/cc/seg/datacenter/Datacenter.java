@@ -9,6 +9,7 @@ import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.network.Message;
+import br.edu.ufersa.cc.seg.common.network.Messenger;
 import br.edu.ufersa.cc.seg.common.network.ServerMessenger;
 import br.edu.ufersa.cc.seg.common.network.TcpServerMessenger;
 import br.edu.ufersa.cc.seg.common.network.UdpMessenger;
@@ -29,6 +30,7 @@ public class Datacenter {
     private final EnvOrInputFactory envOrInputFactory;
 
     private final ServerMessenger serverMessenger;
+    private Messenger locationMessenger;
 
     /*
      * Serviço do banco de dados
@@ -43,8 +45,23 @@ public class Datacenter {
     }
 
     public void start() {
+        connectToLocationServer();
         register();
         serverMessenger.subscribe(this::handleRequest);
+    }
+
+    @SneakyThrows
+    public void stop() {
+        locationMessenger.close();
+        serverMessenger.close();
+    }
+
+    @SneakyThrows
+    private void connectToLocationServer() {
+        final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
+        final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
+
+        locationMessenger = new UdpMessenger(locationHost, locationPort, cryptoService);
     }
 
     @SneakyThrows
@@ -55,10 +72,6 @@ public class Datacenter {
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
                 .withValue(Fields.PORT, serverMessenger.getPort());
 
-        final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
-        final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
-
-        final var locationMessenger = new UdpMessenger(locationHost, locationPort, cryptoService);
         locationMessenger.send(request);
 
         final var response = locationMessenger.receive();
@@ -68,13 +81,11 @@ public class Datacenter {
         } else {
             log.info("Registrado no servidor de localização: {}");
         }
-
-        locationMessenger.close();
     }
 
     private Message handleRequest(final Message request) {
         switch (request.getType()) {
-            case SEND_SNAPSHOT:
+            case STORE_SNAPSHOT:
                 storeSnapshot(request);
                 return MessageFactory.ok();
 

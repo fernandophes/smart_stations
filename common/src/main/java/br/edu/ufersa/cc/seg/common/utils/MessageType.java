@@ -12,6 +12,7 @@ public enum MessageType {
     LOCATE_SERVER,
     REMOVE_SERVER,
     SEND_SNAPSHOT,
+    STORE_SNAPSHOT,
 
     /*
      * Responses
