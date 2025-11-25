@@ -9,6 +9,7 @@ import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.network.Message;
 import br.edu.ufersa.cc.seg.common.network.Messenger;
 import br.edu.ufersa.cc.seg.common.network.ServerMessenger;
+import br.edu.ufersa.cc.seg.common.network.TcpMessenger;
 import br.edu.ufersa.cc.seg.common.network.UdpMessenger;
 import br.edu.ufersa.cc.seg.common.network.UdpServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
@@ -87,7 +88,7 @@ public class EdgeServer {
             final var host = (String) response.getValues().get(Fields.HOST);
             final var port = (int) response.getValues().get(Fields.PORT);
 
-            datacenterMessenger = new UdpMessenger(host, port, cryptoService);
+            datacenterMessenger = new TcpMessenger(host, port, cryptoService);
         }
     }
 
