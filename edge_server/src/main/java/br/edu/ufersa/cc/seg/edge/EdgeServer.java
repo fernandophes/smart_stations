@@ -5,6 +5,7 @@ import java.net.InetAddress;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
+import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.network.Message;
 import br.edu.ufersa.cc.seg.common.network.UdpClientMessenger;
 import br.edu.ufersa.cc.seg.common.network.UdpServerMessenger;
@@ -33,6 +34,7 @@ public class EdgeServer {
 
     public void start() {
         register();
+        messenger.subscribe(this::handleRequest);
     }
 
     @SneakyThrows
@@ -63,6 +65,11 @@ public class EdgeServer {
         }
 
         locationMessenger.close();
+    }
+
+    private Message handleRequest(final Message request) {
+        log.info("Leitura recebida: {}", request.getValues());
+        return MessageFactory.ok();
     }
 
 }
