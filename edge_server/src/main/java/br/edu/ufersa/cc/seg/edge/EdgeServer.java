@@ -18,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EdgeServer {
 
-    // private final int port;
     private final CryptoService cryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
@@ -26,7 +25,6 @@ public class EdgeServer {
 
     public EdgeServer(final CryptoService cryptoService, final EnvOrInputFactory envOrInputFactory)
             throws IOException {
-        // this.port = port;
         this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
         this.messenger = new UdpServerMessenger(cryptoService);
