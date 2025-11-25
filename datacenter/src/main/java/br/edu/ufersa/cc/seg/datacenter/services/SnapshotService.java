@@ -1,5 +1,6 @@
 package br.edu.ufersa.cc.seg.datacenter.services;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import br.edu.ufersa.cc.seg.common.dto.SnapshotDto;
@@ -22,6 +23,13 @@ public class SnapshotService {
     public List<SnapshotDto> listAll() {
         log.info("Listando todas as capturas...");
         return snapshotRepository.listAll().stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    public List<SnapshotDto> listAllAfter(final LocalDateTime timestamp) {
+        log.info("Listando todas as capturas...");
+        return snapshotRepository.listAllAfter(timestamp).stream()
                 .map(this::toDto)
                 .toList();
     }

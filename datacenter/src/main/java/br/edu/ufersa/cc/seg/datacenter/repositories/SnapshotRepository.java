@@ -1,5 +1,6 @@
 package br.edu.ufersa.cc.seg.datacenter.repositories;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import br.edu.ufersa.cc.seg.common.utils.Element;
@@ -14,6 +15,16 @@ public class SnapshotRepository {
     public List<Snapshot> listAll() {
         final var em = emf.createEntityManager();
         final var query = em.createQuery("select c from Snapshot c", Snapshot.class);
+        final var result = query.getResultList();
+
+        em.close();
+        return result;
+    }
+
+    public List<Snapshot> listAllAfter(final LocalDateTime timestamp) {
+        final var em = emf.createEntityManager();
+        final var query = em.createQuery("select c from Snapshot c where c.timestamp >= :timestamp", Snapshot.class);
+        query.setParameter("timestamp", timestamp);
         final var result = query.getResultList();
 
         em.close();

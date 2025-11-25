@@ -3,6 +3,7 @@ package br.edu.ufersa.cc.seg.datacenter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
@@ -92,11 +93,16 @@ public class Datacenter {
         httpServer
                 .get("/api/snapshots", ctx -> {
                     log.info("Requisição HTTP recebida");
-                    // final var request = ctx.bodyAsClass(Message.class);
-                    // request.getValues().get("ctx");
                     ctx.json(snapshotService.listAll());
                 })
-                .start(0);
+                .get("/api/snapshots/{starting}", ctx -> {
+                    log.info("Requisição HTTP recebida");
+                    final var formattedTimestamp = ctx.pathParam("starting");
+                    final var timestamp = LocalDateTime.parse(formattedTimestamp,
+                            DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                    ctx.json(snapshotService.listAllAfter(timestamp));
+                })
+                .start(8480);
 
         log.info("Servidor HTTP iniciado na porta {}", httpServer.port());
     }
