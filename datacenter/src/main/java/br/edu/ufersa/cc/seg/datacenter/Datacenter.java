@@ -2,7 +2,6 @@ package br.edu.ufersa.cc.seg.datacenter;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -10,8 +9,9 @@ import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.network.Message;
-import br.edu.ufersa.cc.seg.common.network.TcpMessenger;
-import br.edu.ufersa.cc.seg.common.network.UdpClientMessenger;
+import br.edu.ufersa.cc.seg.common.network.ServerMessenger;
+import br.edu.ufersa.cc.seg.common.network.TcpServerMessenger;
+import br.edu.ufersa.cc.seg.common.network.UdpMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Element;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
@@ -28,7 +28,7 @@ public class Datacenter {
     private final CryptoService cryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
-    private final TcpMessenger messenger;
+    private final ServerMessenger serverMessenger;
 
     /*
      * Serviço do banco de dados
@@ -39,12 +39,12 @@ public class Datacenter {
             throws IOException {
         this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
-        this.messenger = new TcpMessenger(new ServerSocket(), cryptoService);
+        this.serverMessenger = new TcpServerMessenger(cryptoService);
     }
 
     public void start() {
         register();
-        messenger.subscribe(this::handleRequest);
+        serverMessenger.subscribe(this::handleRequest);
     }
 
     @SneakyThrows
@@ -53,12 +53,12 @@ public class Datacenter {
         final var request = new Message(MessageType.REGISTER_SERVER)
                 .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
-                .withValue(Fields.PORT, messenger.getPort());
+                .withValue(Fields.PORT, serverMessenger.getPort());
 
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
-        final var locationMessenger = new UdpClientMessenger(locationHost, locationPort, cryptoService);
+        final var locationMessenger = new UdpMessenger(locationHost, locationPort, cryptoService);
         locationMessenger.send(request);
 
         final var response = locationMessenger.receive();
@@ -100,7 +100,7 @@ public class Datacenter {
                                 .setDeviceName(deviceName)
                                 .setTimestamp(timestamp)
                                 .setElement(element)
-                                .setValue(value);
+                                .setCapturedValue(value);
 
                         snapshotService.create(snapshot);
                     });

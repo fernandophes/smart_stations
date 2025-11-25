@@ -38,6 +38,6 @@ public class Snapshot {
     private Element element;
 
     @Column(nullable = false)
-    private double value;
+    private double capturedValue;
 
 }

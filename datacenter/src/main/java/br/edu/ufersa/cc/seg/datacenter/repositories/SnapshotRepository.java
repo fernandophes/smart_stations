@@ -6,12 +6,10 @@ import br.edu.ufersa.cc.seg.common.utils.Element;
 import br.edu.ufersa.cc.seg.datacenter.entities.Snapshot;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
 public class SnapshotRepository {
 
-    private static EntityManagerFactory emf = Persistence.createEntityManagerFactory("snapshots");
+    private EntityManagerFactory emf = Persistence.createEntityManagerFactory("snapshots");
 
     public List<Snapshot> listAll() {
         final var em = emf.createEntityManager();
