@@ -18,7 +18,8 @@ public class Main {
                 .orElse(System.in);
 
         final var factory = new EnvOrInputFactory(new Scanner(input));
-        final var device = new Device("Poste inteligente :)", factory.cryptoService(), factory);
+        final var name = factory.getString("DEVICE_NAME");
+        final var device = new Device(name, factory.cryptoService(), factory);
 
         device.start();
         factory.close();
