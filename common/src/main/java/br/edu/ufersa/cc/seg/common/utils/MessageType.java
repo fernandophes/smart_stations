@@ -11,7 +11,7 @@ public enum MessageType {
     REGISTER_SERVER,
     LOCATE_SERVER,
     REMOVE_SERVER,
-    SEND_READING,
+    SEND_SNAPSHOT,
 
     /*
      * Responses
