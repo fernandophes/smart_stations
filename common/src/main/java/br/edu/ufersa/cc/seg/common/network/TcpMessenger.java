@@ -32,6 +32,10 @@ public class TcpMessenger extends Messenger {
         this(serverSocket.accept(), cryptoService);
     }
 
+    public int getPort() {
+        return socket.getLocalPort();
+    }
+
     @Override
     @SneakyThrows
     public void send(final Message message) {
