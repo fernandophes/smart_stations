@@ -58,6 +58,10 @@ public class UdpServerMessenger {
     private final DatagramSocket socket;
     private final CryptoService cryptoService;
 
+    public UdpServerMessenger(final CryptoService cryptoService) throws IOException {
+        this(new DatagramSocket(), cryptoService);
+    }
+
     public UdpServerMessenger(final int port, final CryptoService cryptoService) throws IOException {
         this(new DatagramSocket(port), cryptoService);
     }
@@ -65,6 +69,10 @@ public class UdpServerMessenger {
     private UdpServerMessenger(final DatagramSocket socket, final CryptoService cryptoService) {
         this.socket = socket;
         this.cryptoService = cryptoService;
+    }
+
+    public int getPort() {
+        return socket.getLocalPort();
     }
 
     @SneakyThrows

@@ -24,6 +24,7 @@
         <!-- <module>device</module> -->
         <module>location_server</module>
         <module>edge_server</module>
+        <module>device</module>
         <!-- <module>edge_server</module> -->
         <!-- <module>datacenter</module> -->
         <!-- <module>client</module> -->

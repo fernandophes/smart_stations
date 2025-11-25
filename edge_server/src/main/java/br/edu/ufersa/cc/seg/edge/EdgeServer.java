@@ -18,18 +18,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EdgeServer {
 
-    private final int port;
+    // private final int port;
     private final CryptoService cryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
     private final UdpServerMessenger messenger;
 
-    public EdgeServer(final int port, final CryptoService cryptoService, final EnvOrInputFactory envOrInputFactory)
+    public EdgeServer(final CryptoService cryptoService, final EnvOrInputFactory envOrInputFactory)
             throws IOException {
-        this.port = port;
+        // this.port = port;
         this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
-        this.messenger = new UdpServerMessenger(port, cryptoService);
+        this.messenger = new UdpServerMessenger(cryptoService);
     }
 
     public void start() {
@@ -48,7 +48,7 @@ public class EdgeServer {
         final var request = new Message(MessageType.REGISTER_SERVER)
                 .withValue(Fields.SERVER_TYPE, ServerType.EDGE)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
-                .withValue(Fields.PORT, port);
+                .withValue(Fields.PORT, messenger.getPort());
 
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
