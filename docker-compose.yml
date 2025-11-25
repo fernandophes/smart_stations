@@ -12,6 +12,8 @@ services:
       - PORT=8484
     ports:
       - "8484:8484"
+    networks:
+      - smart-stations
 
   edge-server:
     build:
@@ -23,10 +25,15 @@ services:
     env_file:
       - .env
     environment:
-      - PORT=8485
       - LOCATION_HOST=location-server
       - LOCATION_PORT=8484
     ports:
       - "8485:8485"
     depends_on:
       - location-server
+    networks:
+      - smart-stations
+
+networks:
+  smart-stations:
+    driver: bridge
