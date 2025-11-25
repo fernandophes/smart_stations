@@ -20,6 +20,7 @@ import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
 import br.edu.ufersa.cc.seg.datacenter.entities.Snapshot;
 import br.edu.ufersa.cc.seg.datacenter.services.SnapshotService;
+import io.javalin.Javalin;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,6 +30,7 @@ public class Datacenter {
     private final CryptoService cryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
+    private final Javalin httpServer;
     private final ServerMessenger serverMessenger;
     private Messenger locationMessenger;
 
@@ -42,18 +44,21 @@ public class Datacenter {
         this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
         this.serverMessenger = new TcpServerMessenger(cryptoService);
+        httpServer = Javalin.create();
     }
 
     public void start() {
         connectToLocationServer();
-        register();
         serverMessenger.subscribe(this::handleRequest);
+        configureHttpServer();
+        register();
     }
 
     @SneakyThrows
     public void stop() {
         locationMessenger.close();
         serverMessenger.close();
+        httpServer.stop();
     }
 
     @SneakyThrows
@@ -83,17 +88,27 @@ public class Datacenter {
         }
     }
 
-    private Message handleRequest(final Message request) {
-        switch (request.getType()) {
-            case STORE_SNAPSHOT:
-                storeSnapshot(request);
-                return MessageFactory.ok();
+    private void configureHttpServer() {
+        httpServer
+                .get("/api/snapshots", ctx -> {
+                    log.info("Requisição HTTP recebida");
+                    // final var request = ctx.bodyAsClass(Message.class);
+                    // request.getValues().get("ctx");
+                    ctx.json(snapshotService.listAll());
+                })
+                .start(0);
 
-            default:
-                break;
+        log.info("Servidor HTTP iniciado na porta {}", httpServer.port());
+    }
+
+    private Message handleRequest(final Message request) {
+        if (MessageType.STORE_SNAPSHOT.equals(request.getType())) {
+            storeSnapshot(request);
+            return MessageFactory.ok();
+        } else {
+            return MessageFactory.error("Tipo de mensagem não suportada");
         }
 
-        return MessageFactory.ok();
     }
 
     private void storeSnapshot(final Message request) {

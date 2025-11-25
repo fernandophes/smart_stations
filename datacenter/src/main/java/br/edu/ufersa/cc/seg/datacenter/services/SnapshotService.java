@@ -2,6 +2,8 @@ package br.edu.ufersa.cc.seg.datacenter.services;
 
 import java.util.List;
 
+import br.edu.ufersa.cc.seg.common.dto.SnapshotDto;
+import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.datacenter.entities.Snapshot;
 import br.edu.ufersa.cc.seg.datacenter.repositories.SnapshotRepository;
 import lombok.NoArgsConstructor;
@@ -17,14 +19,25 @@ public class SnapshotService {
         return snapshotRepository.countAll();
     }
 
-    public List<Snapshot> listAll() {
+    public List<SnapshotDto> listAll() {
         log.info("Listando todas as capturas...");
-        return snapshotRepository.listAll();
+        return snapshotRepository.listAll().stream()
+                .map(this::toDto)
+                .toList();
     }
 
     public void create(final Snapshot snapshot) {
         snapshotRepository.create(snapshot);
         log.info("Captura cadastrada");
+    }
+
+    private SnapshotDto toDto(final Snapshot entity) {
+        return new SnapshotDto()
+                .setId(entity.getId())
+                .setDeviceName(entity.getDeviceName())
+                .setElement(entity.getElement())
+                .setCapturedValue(entity.getCapturedValue())
+                .setTimestamp(entity.getTimestamp().format(Constants.DATE_TIME_FORMATTER));
     }
 
 }
