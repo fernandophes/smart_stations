@@ -1,4 +1,4 @@
-module location_server {
+module edge_server {
     exports br.edu.ufersa.cc.seg;
 
     requires common;

@@ -13,14 +13,9 @@
 
     <!-- Informações sobre o projeto -->
     <artifactId>edge_server</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
     <name>Servidor de Borda</name>
     <description>Módulo que recebe os dados dos dispositivos e os envia para o datacenter</description>
-
-    <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-    </properties>
 
     <dependencies>
         <dependency>
