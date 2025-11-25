@@ -1,11 +1,11 @@
-package br.edu.ufersa.cc.seg.utils;
+package br.edu.ufersa.cc.seg.common.utils;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum ReadingType {
+public enum Element {
 
     CO2("CO₂", 400, 1500, 2),
     CO("CO", 0.1, 50, 2),

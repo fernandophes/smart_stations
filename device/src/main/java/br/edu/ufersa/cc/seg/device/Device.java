@@ -17,8 +17,8 @@ import br.edu.ufersa.cc.seg.common.network.UdpClientMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
+import br.edu.ufersa.cc.seg.common.utils.Element;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
-import br.edu.ufersa.cc.seg.utils.ReadingType;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -88,11 +88,11 @@ public class Device {
                 .withValue("deviceName", getName())
                 .withValue("timestamp", LocalDateTime.now().format(Constants.DATE_TIME_FORMATTER));
 
-        for (final var type : ReadingType.values()) {
-            final var raw = RANDOM.nextDouble(type.getMin(), type.getMax());
-            final var scaled = BigDecimal.valueOf(raw).setScale(type.getScale(), RoundingMode.HALF_DOWN);
+        for (final var element : Element.values()) {
+            final var raw = RANDOM.nextDouble(element.getMin(), element.getMax());
+            final var scaled = BigDecimal.valueOf(raw).setScale(element.getScale(), RoundingMode.HALF_DOWN);
 
-            snapshot.withValue(type.name(), scaled);
+            snapshot.withValue(element.name(), scaled);
         }
 
         return snapshot;
