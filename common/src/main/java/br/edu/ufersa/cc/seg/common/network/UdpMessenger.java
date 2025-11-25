@@ -11,13 +11,13 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class UdpClientMessenger extends Messenger {
+public class UdpMessenger extends Messenger {
 
     private final DatagramSocket socket;
     private final InetAddress destinationHost;
     private final int destinationPort;
 
-    public UdpClientMessenger(final String destinationHost, final int destinationPort,
+    public UdpMessenger(final String destinationHost, final int destinationPort,
             final CryptoService cryptoService) throws IOException {
         super(cryptoService);
         this.socket = new DatagramSocket();

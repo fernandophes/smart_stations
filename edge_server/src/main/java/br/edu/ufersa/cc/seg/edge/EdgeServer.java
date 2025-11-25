@@ -7,7 +7,7 @@ import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.network.Message;
-import br.edu.ufersa.cc.seg.common.network.UdpClientMessenger;
+import br.edu.ufersa.cc.seg.common.network.UdpMessenger;
 import br.edu.ufersa.cc.seg.common.network.UdpServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
@@ -51,7 +51,7 @@ public class EdgeServer {
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
-        final var locationMessenger = new UdpClientMessenger(locationHost, locationPort, cryptoService);
+        final var locationMessenger = new UdpMessenger(locationHost, locationPort, cryptoService);
         locationMessenger.send(request);
 
         final var response = locationMessenger.receive();

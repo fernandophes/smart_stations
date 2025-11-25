@@ -2,8 +2,7 @@ package br.edu.ufersa.cc.seg.common.network;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
+import java.net.ServerSocket;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -15,7 +14,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class UdpServerMessenger {
+public class TcpServerMessenger {
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public class Subscription implements Closeable {
@@ -34,8 +33,7 @@ public class UdpServerMessenger {
                     final var client = accept();
 
                     log.info("Novo cliente");
-                    final var clientSubscription = client.getMessenger().subscribe(callback);
-                    clientSubscription.handleRequest(client.getFirstMessage());
+                    client.subscribe(callback);
                 }
             });
 
@@ -51,22 +49,22 @@ public class UdpServerMessenger {
 
     @Value
     public static class ClientRegistration {
-        UdpMessenger messenger;
+        TcpMessenger messenger;
         Message firstMessage;
     }
 
-    private final DatagramSocket socket;
+    private final ServerSocket socket;
     private final CryptoService cryptoService;
 
-    public UdpServerMessenger(final CryptoService cryptoService) throws IOException {
-        this(new DatagramSocket(), cryptoService);
+    public TcpServerMessenger(final CryptoService cryptoService) throws IOException {
+        this(new ServerSocket(0), cryptoService);
     }
 
-    public UdpServerMessenger(final int port, final CryptoService cryptoService) throws IOException {
-        this(new DatagramSocket(port), cryptoService);
+    public TcpServerMessenger(final int port, final CryptoService cryptoService) throws IOException {
+        this(new ServerSocket(port), cryptoService);
     }
 
-    private UdpServerMessenger(final DatagramSocket socket, final CryptoService cryptoService) {
+    private TcpServerMessenger(final ServerSocket socket, final CryptoService cryptoService) {
         this.socket = socket;
         this.cryptoService = cryptoService;
     }
@@ -76,14 +74,8 @@ public class UdpServerMessenger {
     }
 
     @SneakyThrows
-    public ClientRegistration accept() {
-        final var bytes = new byte[1024];
-        final var packet = new DatagramPacket(bytes, bytes.length);
-        socket.receive(packet);
-
-        final var client = new UdpMessenger(packet.getAddress().getHostName(), packet.getPort(), cryptoService);
-
-        return new ClientRegistration(client, client.receive(packet));
+    public TcpMessenger accept() {
+        return new TcpMessenger(socket, cryptoService);
     }
 
     public Subscription subscribe(final Function<Message, Message> callback) {
@@ -92,6 +84,7 @@ public class UdpServerMessenger {
         return subscription;
     }
 
+    @SneakyThrows
     public void close() {
         socket.close();
     }

@@ -13,7 +13,7 @@ import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.network.Message;
 import br.edu.ufersa.cc.seg.common.network.Messenger;
-import br.edu.ufersa.cc.seg.common.network.UdpClientMessenger;
+import br.edu.ufersa.cc.seg.common.network.UdpMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
@@ -64,7 +64,7 @@ public class Device {
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
-        locationMessenger = new UdpClientMessenger(locationHost, locationPort, cryptoService);
+        locationMessenger = new UdpMessenger(locationHost, locationPort, cryptoService);
     }
 
     @SneakyThrows
@@ -79,7 +79,7 @@ public class Device {
             final var host = (String) response.getValues().get(Fields.HOST);
             final var port = (int) response.getValues().get(Fields.PORT);
 
-            edgeMessenger = new UdpClientMessenger(host, port, cryptoService);
+            edgeMessenger = new UdpMessenger(host, port, cryptoService);
         }
     }
 
