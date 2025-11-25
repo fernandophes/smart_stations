@@ -1,19 +1,33 @@
 package br.edu.ufersa.cc.seg.device;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
-import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.network.Message;
 import br.edu.ufersa.cc.seg.common.network.Messenger;
 import br.edu.ufersa.cc.seg.common.network.UdpClientMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
+import br.edu.ufersa.cc.seg.utils.ReadingType;
 import lombok.Data;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@Slf4j
 public class Device {
+
+    private static final Random RANDOM = new Random();
+    private static final long INTERVAL = 3_000;
+    private static final Timer TIMER = new Timer();
 
     private final String name;
     private final CryptoService cryptoService;
@@ -22,13 +36,25 @@ public class Device {
     private Messenger locationMessenger;
     private Messenger edgeMessenger;
 
+    private TimerTask subscription;
+
+    private boolean isRunning;
+
     public void start() {
         connectLocationServer();
         locateEdgeServer();
 
-        final var helloWorld = MessageFactory.ok("Hello", "World")
-                .withValue("deviceName", name);
-        edgeMessenger.send(helloWorld);
+        subscription = new TimerTask() {
+            @Override
+            public void run() {
+                final var snapshot = simulateReading();
+                log.info("Leitura feita: {}", snapshot);
+                edgeMessenger.send(snapshot);
+            }
+        };
+
+        TIMER.schedule(subscription, Date.from(Instant.now()), INTERVAL);
+        setRunning(true);
     }
 
     @SneakyThrows
@@ -52,6 +78,26 @@ public class Device {
             final var port = (int) response.getValues().get(Fields.PORT);
 
             edgeMessenger = new UdpClientMessenger(host, port, cryptoService);
+        }
+    }
+
+    private Message simulateReading() {
+        final var snapshot = new Message(MessageType.SEND_READING);
+
+        for (final var type : ReadingType.values()) {
+            final var raw = RANDOM.nextDouble(type.getMin(), type.getMax());
+            final var scaled = BigDecimal.valueOf(raw).setScale(type.getScale(), RoundingMode.HALF_DOWN);
+
+            snapshot.withValue(type.getName(), scaled);
+        }
+
+        return snapshot;
+    }
+
+    public void close() {
+        if (isRunning()) {
+            subscription.cancel();
+            log.info("Atividade do dispositivo {} finalizada", name);
         }
     }
 
