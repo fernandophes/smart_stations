@@ -14,7 +14,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class TcpServerMessenger {
+public class TcpServerMessenger implements ServerMessenger {
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public class Subscription implements Closeable {

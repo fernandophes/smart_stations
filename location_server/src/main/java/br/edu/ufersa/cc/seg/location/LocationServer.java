@@ -9,6 +9,7 @@ import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.network.Messenger.Subscription;
 import br.edu.ufersa.cc.seg.common.network.Message;
+import br.edu.ufersa.cc.seg.common.network.ServerMessenger;
 import br.edu.ufersa.cc.seg.common.network.UdpServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
@@ -26,15 +27,15 @@ public class LocationServer {
     }
 
     private final Map<ServerType, Location> locations = new HashMap<>();
-    private final UdpServerMessenger messenger;
+    private final ServerMessenger serverMessenger;
     private Subscription subscription;
 
     public LocationServer(final int port, final CryptoService cryptoService) throws IOException {
-        this.messenger = new UdpServerMessenger(port, cryptoService);
+        this.serverMessenger = new UdpServerMessenger(port, cryptoService);
     }
 
     public void start() {
-        messenger.subscribe(this::handleRequest);
+        serverMessenger.subscribe(this::handleRequest);
     }
 
     public void register(final ServerType serverType, final String host, final int port) {
@@ -54,7 +55,7 @@ public class LocationServer {
     @SneakyThrows
     public void stop() {
         subscription.close();
-        messenger.close();
+        serverMessenger.close();
         subscription = null;
     }
 

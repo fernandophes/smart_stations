@@ -15,7 +15,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class UdpServerMessenger {
+public class UdpServerMessenger implements ServerMessenger {
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public class Subscription implements Closeable {
@@ -40,6 +40,17 @@ public class UdpServerMessenger {
             });
 
             thread.start();
+        }
+
+        @SneakyThrows
+        private ClientRegistration accept() {
+            final var bytes = new byte[1024];
+            final var packet = new DatagramPacket(bytes, bytes.length);
+            socket.receive(packet);
+
+            final var client = new UdpMessenger(packet.getAddress().getHostName(), packet.getPort(), cryptoService);
+
+            return new ClientRegistration(client, client.receive(packet));
         }
 
         @Override
@@ -73,17 +84,6 @@ public class UdpServerMessenger {
 
     public int getPort() {
         return socket.getLocalPort();
-    }
-
-    @SneakyThrows
-    public ClientRegistration accept() {
-        final var bytes = new byte[1024];
-        final var packet = new DatagramPacket(bytes, bytes.length);
-        socket.receive(packet);
-
-        final var client = new UdpMessenger(packet.getAddress().getHostName(), packet.getPort(), cryptoService);
-
-        return new ClientRegistration(client, client.receive(packet));
     }
 
     public Subscription subscribe(final Function<Message, Message> callback) {

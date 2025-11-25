@@ -7,6 +7,7 @@ import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.network.Message;
+import br.edu.ufersa.cc.seg.common.network.ServerMessenger;
 import br.edu.ufersa.cc.seg.common.network.UdpMessenger;
 import br.edu.ufersa.cc.seg.common.network.UdpServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
@@ -21,23 +22,23 @@ public class EdgeServer {
     private final CryptoService cryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
-    private final UdpServerMessenger messenger;
+    private final ServerMessenger serverMessenger;
 
     public EdgeServer(final CryptoService cryptoService, final EnvOrInputFactory envOrInputFactory)
             throws IOException {
         this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
-        this.messenger = new UdpServerMessenger(cryptoService);
+        this.serverMessenger = new UdpServerMessenger(cryptoService);
     }
 
     public void start() {
         register();
-        messenger.subscribe(this::handleRequest);
+        serverMessenger.subscribe(this::handleRequest);
     }
 
     @SneakyThrows
     public void stop() {
-        messenger.close();
+        serverMessenger.close();
     }
 
     @SneakyThrows
@@ -46,7 +47,7 @@ public class EdgeServer {
         final var request = new Message(MessageType.REGISTER_SERVER)
                 .withValue(Fields.SERVER_TYPE, ServerType.EDGE)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
-                .withValue(Fields.PORT, messenger.getPort());
+                .withValue(Fields.PORT, serverMessenger.getPort());
 
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
