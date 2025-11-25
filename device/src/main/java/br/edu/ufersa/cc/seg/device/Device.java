@@ -85,6 +85,7 @@ public class Device {
 
     private Message simulateReading() {
         final var snapshot = new Message(MessageType.SEND_READING)
+                .withValue("deviceName", getName())
                 .withValue("timestamp", LocalDateTime.now().format(Constants.DATE_TIME_FORMATTER));
 
         for (final var type : ReadingType.values()) {
