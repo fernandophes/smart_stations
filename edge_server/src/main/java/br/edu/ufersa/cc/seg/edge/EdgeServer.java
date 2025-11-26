@@ -6,12 +6,11 @@ import java.net.InetAddress;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
-import br.edu.ufersa.cc.seg.common.network.Message;
-import br.edu.ufersa.cc.seg.common.network.Messenger;
-import br.edu.ufersa.cc.seg.common.network.ServerMessenger;
-import br.edu.ufersa.cc.seg.common.network.TcpMessenger;
-import br.edu.ufersa.cc.seg.common.network.UdpMessenger;
-import br.edu.ufersa.cc.seg.common.network.UdpServerMessenger;
+import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
+import br.edu.ufersa.cc.seg.common.messengers.Message;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger;
+import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
+import br.edu.ufersa.cc.seg.common.messengers.UdpServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
@@ -56,7 +55,7 @@ public class EdgeServer {
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
-        locationMessenger = new UdpMessenger(locationHost, locationPort, cryptoService);
+        locationMessenger = MessengerFactory.udp(locationHost, locationPort, cryptoService);
     }
 
     @SneakyThrows
@@ -91,7 +90,7 @@ public class EdgeServer {
                 final var host = (String) response.getValues().get(Fields.HOST);
                 final var port = (int) response.getValues().get(Fields.PORT);
 
-                datacenterMessenger = new TcpMessenger(host, port, cryptoService);
+                datacenterMessenger = MessengerFactory.tcp(host, port, cryptoService);
             }
 
             if (datacenterMessenger == null) {

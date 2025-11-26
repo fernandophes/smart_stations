@@ -1,6 +1,6 @@
 package br.edu.ufersa.cc.seg.common.factories;
 
-import br.edu.ufersa.cc.seg.common.network.Message;
+import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;

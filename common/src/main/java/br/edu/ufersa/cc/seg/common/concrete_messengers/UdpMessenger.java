@@ -1,4 +1,4 @@
-package br.edu.ufersa.cc.seg.common.network;
+package br.edu.ufersa.cc.seg.common.concrete_messengers;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -7,6 +7,8 @@ import java.net.InetAddress;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
+import br.edu.ufersa.cc.seg.common.messengers.Message;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 

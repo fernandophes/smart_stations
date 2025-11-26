@@ -7,10 +7,10 @@ import java.util.Optional;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
-import br.edu.ufersa.cc.seg.common.network.Messenger.Subscription;
-import br.edu.ufersa.cc.seg.common.network.Message;
-import br.edu.ufersa.cc.seg.common.network.ServerMessenger;
-import br.edu.ufersa.cc.seg.common.network.UdpServerMessenger;
+import br.edu.ufersa.cc.seg.common.messengers.Message;
+import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
+import br.edu.ufersa.cc.seg.common.messengers.UdpServerMessenger;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger.Subscription;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
 import lombok.SneakyThrows;

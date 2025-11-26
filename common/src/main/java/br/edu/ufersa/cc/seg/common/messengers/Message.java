@@ -1,4 +1,4 @@
-package br.edu.ufersa.cc.seg.common.network;
+package br.edu.ufersa.cc.seg.common.messengers;
 
 import java.io.Serializable;
 import java.util.HashMap;

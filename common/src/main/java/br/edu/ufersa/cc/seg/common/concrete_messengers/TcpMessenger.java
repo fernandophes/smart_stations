@@ -1,4 +1,4 @@
-package br.edu.ufersa.cc.seg.common.network;
+package br.edu.ufersa.cc.seg.common.concrete_messengers;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -8,6 +8,8 @@ import java.net.Socket;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
+import br.edu.ufersa.cc.seg.common.messengers.Message;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import lombok.SneakyThrows;
 
 public class TcpMessenger extends Messenger {

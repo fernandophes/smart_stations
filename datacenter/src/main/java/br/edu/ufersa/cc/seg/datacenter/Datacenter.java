@@ -9,11 +9,11 @@ import java.util.Optional;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
-import br.edu.ufersa.cc.seg.common.network.Message;
-import br.edu.ufersa.cc.seg.common.network.Messenger;
-import br.edu.ufersa.cc.seg.common.network.ServerMessenger;
-import br.edu.ufersa.cc.seg.common.network.TcpServerMessenger;
-import br.edu.ufersa.cc.seg.common.network.UdpMessenger;
+import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
+import br.edu.ufersa.cc.seg.common.messengers.Message;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger;
+import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
+import br.edu.ufersa.cc.seg.common.messengers.TcpServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Element;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
@@ -67,7 +67,7 @@ public class Datacenter {
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
-        locationMessenger = new UdpMessenger(locationHost, locationPort, cryptoService);
+        locationMessenger = MessengerFactory.udp(locationHost, locationPort, cryptoService);
     }
 
     @SneakyThrows

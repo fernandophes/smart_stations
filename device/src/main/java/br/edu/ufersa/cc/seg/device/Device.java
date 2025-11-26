@@ -11,9 +11,9 @@ import java.util.TimerTask;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
-import br.edu.ufersa.cc.seg.common.network.Message;
-import br.edu.ufersa.cc.seg.common.network.Messenger;
-import br.edu.ufersa.cc.seg.common.network.UdpMessenger;
+import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
+import br.edu.ufersa.cc.seg.common.messengers.Message;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
@@ -64,7 +64,7 @@ public class Device {
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
-        locationMessenger = new UdpMessenger(locationHost, locationPort, cryptoService);
+        locationMessenger = MessengerFactory.udp(locationHost, locationPort, cryptoService);
     }
 
     @SneakyThrows
@@ -80,7 +80,7 @@ public class Device {
                 final var host = (String) response.getValues().get(Fields.HOST);
                 final var port = (int) response.getValues().get(Fields.PORT);
 
-                edgeMessenger = new UdpMessenger(host, port, cryptoService);
+                edgeMessenger = MessengerFactory.udp(host, port, cryptoService);
             }
 
             if (edgeMessenger == null) {

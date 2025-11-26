@@ -1,4 +1,4 @@
-package br.edu.ufersa.cc.seg.common.network;
+package br.edu.ufersa.cc.seg.common.messengers;
 
 import java.io.Closeable;
 import java.util.function.Function;
