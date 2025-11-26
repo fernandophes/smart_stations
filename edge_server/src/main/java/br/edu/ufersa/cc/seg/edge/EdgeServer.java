@@ -7,10 +7,10 @@ import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
+import br.edu.ufersa.cc.seg.common.factories.ServerMessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
-import br.edu.ufersa.cc.seg.common.messengers.UdpServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
@@ -33,7 +33,7 @@ public class EdgeServer {
             throws IOException {
         this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
-        this.serverMessenger = new UdpServerMessenger(cryptoService);
+        this.serverMessenger = ServerMessengerFactory.udp(cryptoService);
     }
 
     public void start() {

@@ -1,4 +1,4 @@
-package br.edu.ufersa.cc.seg.common.messengers;
+package br.edu.ufersa.cc.seg.common.concrete_messengers;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -6,8 +6,9 @@ import java.net.ServerSocket;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
-import br.edu.ufersa.cc.seg.common.concrete_messengers.TcpMessenger;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
+import br.edu.ufersa.cc.seg.common.messengers.Message;
+import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;

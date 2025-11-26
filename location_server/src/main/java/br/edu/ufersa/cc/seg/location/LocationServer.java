@@ -7,9 +7,9 @@ import java.util.Optional;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
+import br.edu.ufersa.cc.seg.common.factories.ServerMessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
-import br.edu.ufersa.cc.seg.common.messengers.UdpServerMessenger;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger.Subscription;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
@@ -31,7 +31,7 @@ public class LocationServer {
     private Subscription subscription;
 
     public LocationServer(final int port, final CryptoService cryptoService) throws IOException {
-        this.serverMessenger = new UdpServerMessenger(port, cryptoService);
+        this.serverMessenger = ServerMessengerFactory.udp(port, cryptoService);
     }
 
     public void start() {

@@ -10,10 +10,10 @@ import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
+import br.edu.ufersa.cc.seg.common.factories.ServerMessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
-import br.edu.ufersa.cc.seg.common.messengers.TcpServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Element;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
@@ -44,7 +44,7 @@ public class Datacenter {
             throws IOException {
         this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
-        this.serverMessenger = new TcpServerMessenger(cryptoService);
+        this.serverMessenger = ServerMessengerFactory.tcp(cryptoService);
         httpServer = Javalin.create();
     }
 
