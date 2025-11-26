@@ -31,8 +31,6 @@ public class TcpServerMessenger implements ServerMessenger {
                     log.info("Aguardando clientes...");
 
                     final var client = accept();
-
-                    log.info("Novo cliente");
                     client.subscribe(callback);
                 }
             });

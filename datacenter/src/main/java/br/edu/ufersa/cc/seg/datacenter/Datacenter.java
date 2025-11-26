@@ -123,7 +123,7 @@ public class Datacenter {
         final var formattedTimestamp = (String) values.get("timestamp");
         final var timestamp = LocalDateTime.parse(formattedTimestamp, Constants.DATE_TIME_FORMATTER);
 
-        log.info("Armazenando as leituras de {} em {}", deviceName, formattedTimestamp);
+        log.info("Armazenando as leituras de {} em {}...", deviceName, formattedTimestamp);
 
         for (final var element : Element.values()) {
             Optional.of((double) values.get(element.name()))
@@ -137,6 +137,8 @@ public class Datacenter {
                         snapshotService.create(snapshot);
                     });
         }
+
+        log.info("Leituras de {} em {} armazenadas", deviceName, formattedTimestamp);
     }
 
 }

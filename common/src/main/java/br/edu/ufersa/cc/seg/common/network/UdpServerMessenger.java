@@ -29,11 +29,8 @@ public class UdpServerMessenger implements ServerMessenger {
 
             thread = new Thread(() -> {
                 while (isRunning.get()) {
-                    log.info("Aguardando clientes...");
-
                     final var client = accept();
 
-                    log.info("Novo cliente");
                     final var clientSubscription = client.getMessenger().subscribe(callback);
                     clientSubscription.handleRequest(client.getFirstMessage());
                 }

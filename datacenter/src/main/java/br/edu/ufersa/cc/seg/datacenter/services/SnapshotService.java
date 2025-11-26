@@ -36,7 +36,6 @@ public class SnapshotService {
 
     public void create(final Snapshot snapshot) {
         snapshotRepository.create(snapshot);
-        log.info("Captura cadastrada");
     }
 
     private SnapshotDto toDto(final Snapshot entity) {
