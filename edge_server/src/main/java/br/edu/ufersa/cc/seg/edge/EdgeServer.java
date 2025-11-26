@@ -21,6 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EdgeServer {
 
+    private static final long INTERVAL = 3_000;
+
     private final CryptoService cryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
@@ -81,15 +83,21 @@ public class EdgeServer {
         final var request = new Message(MessageType.LOCATE_SERVER)
                 .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER);
 
-        locationMessenger.send(request);
-        final var response = locationMessenger.receive();
+        do {
+            locationMessenger.send(request);
+            final var response = locationMessenger.receive();
 
-        if (response.getType().equals(MessageType.OK)) {
-            final var host = (String) response.getValues().get(Fields.HOST);
-            final var port = (int) response.getValues().get(Fields.PORT);
+            if (response.getType().equals(MessageType.OK)) {
+                final var host = (String) response.getValues().get(Fields.HOST);
+                final var port = (int) response.getValues().get(Fields.PORT);
 
-            datacenterMessenger = new TcpMessenger(host, port, cryptoService);
-        }
+                datacenterMessenger = new TcpMessenger(host, port, cryptoService);
+            }
+
+            if (datacenterMessenger == null) {
+                Thread.sleep(INTERVAL);
+            }
+        } while (datacenterMessenger == null);
     }
 
     private Message handleRequest(final Message request) {

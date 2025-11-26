@@ -72,15 +72,21 @@ public class Device {
         final var request = new Message(MessageType.LOCATE_SERVER)
                 .withValue(Fields.SERVER_TYPE, ServerType.EDGE);
 
-        locationMessenger.send(request);
-        final var response = locationMessenger.receive();
+        do {
+            locationMessenger.send(request);
+            final var response = locationMessenger.receive();
 
-        if (response.getType().equals(MessageType.OK)) {
-            final var host = (String) response.getValues().get(Fields.HOST);
-            final var port = (int) response.getValues().get(Fields.PORT);
+            if (response.getType().equals(MessageType.OK)) {
+                final var host = (String) response.getValues().get(Fields.HOST);
+                final var port = (int) response.getValues().get(Fields.PORT);
 
-            edgeMessenger = new UdpMessenger(host, port, cryptoService);
-        }
+                edgeMessenger = new UdpMessenger(host, port, cryptoService);
+            }
+
+            if (edgeMessenger == null) {
+                Thread.sleep(INTERVAL);
+            }
+        } while (edgeMessenger == null);
     }
 
     private Message simulateReading() {
@@ -98,11 +104,16 @@ public class Device {
         return snapshot;
     }
 
+    @SneakyThrows
     public void close() {
         if (isRunning()) {
             subscription.cancel();
             log.info("Atividade do dispositivo {} finalizada", name);
         }
+
+        envOrInputFactory.close();
+        edgeMessenger.close();
+        locationMessenger.close();
     }
 
 }

@@ -10,10 +10,25 @@ services:
       - .env
     environment:
       - PORT=8484
-    ports:
-      - "8484:8484"
     networks:
-      - smart-stations
+      - ss-network
+
+  datacenter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: datacenter # <--- Nome exato da pasta do módulo
+    container_name: datacenter
+    env_file:
+      - .env
+    environment:
+      - LOCATION_HOST=location-server
+      - LOCATION_PORT=8484
+    depends_on:
+      - location-server
+    networks:
+      - ss-network
 
   edge-server:
     build:
@@ -29,8 +44,9 @@ services:
       - LOCATION_PORT=8484
     depends_on:
       - location-server
+      - datacenter
     networks:
-      - smart-stations
+      - ss-network
 
   poste:
     build:
@@ -48,7 +64,7 @@ services:
     depends_on:
       - edge-server
     networks:
-      - smart-stations
+      - ss-network
 
   semaforo:
     build:
@@ -66,8 +82,8 @@ services:
     depends_on:
       - edge-server
     networks:
-      - smart-stations
+      - ss-network
 
 networks:
-  smart-stations:
+  ss-network:
     driver: bridge
