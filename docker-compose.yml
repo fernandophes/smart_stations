@@ -9,7 +9,7 @@ services:
     env_file:
       - .env
     environment:
-      - PORT=8484
+      - PORT=${LOCATION_PORT}
     networks:
       - ss-network
 
@@ -24,7 +24,6 @@ services:
       - .env
     environment:
       - LOCATION_HOST=location-server
-      - LOCATION_PORT=8484
     depends_on:
       - location-server
     networks:
@@ -41,7 +40,6 @@ services:
       - .env
     environment:
       - LOCATION_HOST=location-server
-      - LOCATION_PORT=8484
     depends_on:
       - location-server
       - datacenter
@@ -60,7 +58,6 @@ services:
     environment:
       - DEVICE_NAME=Poste
       - LOCATION_HOST=location-server
-      - LOCATION_PORT=8484
     depends_on:
       - edge-server
     networks:
@@ -78,7 +75,6 @@ services:
     environment:
       - DEVICE_NAME=Semáforo
       - LOCATION_HOST=location-server
-      - LOCATION_PORT=8484
     depends_on:
       - edge-server
     networks:
