@@ -10,6 +10,7 @@ module common {
 
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.core;
+    requires com.auth0.jwt;
     requires org.slf4j;
     requires lombok;
 }

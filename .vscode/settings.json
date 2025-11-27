@@ -5,6 +5,7 @@
         "edge_server",
         "network",
         "device",
-        "datacenter"
+        "datacenter",
+        "auth"
     ]
 }
