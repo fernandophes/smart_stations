@@ -20,6 +20,7 @@ public enum MessageType {
      */
     OK,
     ERROR,
+    UNAUTHORIZED,
     ;
 
 }
