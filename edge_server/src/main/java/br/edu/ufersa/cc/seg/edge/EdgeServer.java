@@ -33,7 +33,7 @@ public class EdgeServer {
             throws IOException {
         this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
-        this.serverMessenger = ServerMessengerFactory.udp(cryptoService);
+        this.serverMessenger = ServerMessengerFactory.secureUdp(cryptoService);
     }
 
     public void start() {

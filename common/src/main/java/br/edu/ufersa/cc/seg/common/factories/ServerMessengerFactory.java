@@ -12,22 +12,22 @@ import lombok.SneakyThrows;
 public abstract class ServerMessengerFactory {
 
     @SneakyThrows
-    public static ServerMessenger tcp(final CryptoService cryptoService) {
+    public static ServerMessenger secureTcp(final CryptoService cryptoService) {
         return new SecureTcpServerMessenger(cryptoService);
     }
 
     @SneakyThrows
-    public static ServerMessenger tcp(final int port, final CryptoService cryptoService) {
+    public static ServerMessenger secureTcp(final int port, final CryptoService cryptoService) {
         return new SecureTcpServerMessenger(port, cryptoService);
     }
 
     @SneakyThrows
-    public static ServerMessenger udp(final CryptoService cryptoService) {
+    public static ServerMessenger secureUdp(final CryptoService cryptoService) {
         return new SecureUdpServerMessenger(cryptoService);
     }
 
     @SneakyThrows
-    public static ServerMessenger udp(final int port, final CryptoService cryptoService) {
+    public static ServerMessenger secureUdp(final int port, final CryptoService cryptoService) {
         return new SecureUdpServerMessenger(port, cryptoService);
     }
 

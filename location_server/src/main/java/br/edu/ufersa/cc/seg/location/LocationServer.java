@@ -31,7 +31,7 @@ public class LocationServer {
     private Subscription subscription;
 
     public LocationServer(final int port, final CryptoService cryptoService) throws IOException {
-        this.serverMessenger = ServerMessengerFactory.udp(port, cryptoService);
+        this.serverMessenger = ServerMessengerFactory.secureUdp(port, cryptoService);
     }
 
     public void start() {

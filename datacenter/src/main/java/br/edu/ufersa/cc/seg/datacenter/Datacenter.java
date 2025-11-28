@@ -44,7 +44,7 @@ public class Datacenter {
             throws IOException {
         this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
-        this.serverMessenger = ServerMessengerFactory.tcp(cryptoService);
+        this.serverMessenger = ServerMessengerFactory.secureTcp(cryptoService);
         httpServer = Javalin.create();
     }
 
