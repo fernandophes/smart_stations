@@ -2,6 +2,7 @@ package br.edu.ufersa.cc.seg.common.factories;
 
 import br.edu.ufersa.cc.seg.common.concrete_crypto.AESService;
 import br.edu.ufersa.cc.seg.common.concrete_crypto.RSAService;
+import br.edu.ufersa.cc.seg.common.crypto.AsymmetricCryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -17,11 +18,11 @@ public abstract class CryptoServiceFactory {
         return new AESService(encryptionKey, hmacKey);
     }
 
-    public static CryptoService rsa(final byte[] hmacKey) {
+    public static AsymmetricCryptoService rsa(final byte[] hmacKey) {
         return new RSAService(hmacKey);
     }
 
-    public static CryptoService rsa(final String hmacKey) {
+    public static AsymmetricCryptoService rsa(final String hmacKey) {
         return new RSAService(hmacKey);
     }
 
