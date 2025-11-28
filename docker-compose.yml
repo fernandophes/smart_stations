@@ -13,6 +13,22 @@ services:
     networks:
       - ss-network
 
+  auth-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: auth_server # <--- Nome exato da pasta do módulo
+    container_name: auth-server
+    env_file:
+      - .env
+    environment:
+      - LOCATION_HOST=location-server
+    depends_on:
+      - location-server
+    networks:
+      - ss-network
+
   datacenter:
     build:
       context: .
@@ -43,7 +59,6 @@ services:
     environment:
       - LOCATION_HOST=location-server
     depends_on:
-      - location-server
       - datacenter
     networks:
       - ss-network
