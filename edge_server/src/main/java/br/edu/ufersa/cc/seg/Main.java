@@ -18,7 +18,7 @@ public class Main {
                 .orElse(System.in);
 
         final var factory = new EnvOrInputFactory(new Scanner(input));
-        final var server = new EdgeServer(factory.aesService(), factory);
+        final var server = new EdgeServer(factory);
 
         server.start();
         factory.close();

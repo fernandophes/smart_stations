@@ -30,22 +30,20 @@ public class EdgeServer {
 
     private final CryptoService asymmetricCryptoService;
     private final TokenService tokenService;
-    private final CryptoService oldCryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
-    private final PublicKey publicEncryptionKey;
+    private final PublicKey publicKey;
 
     private final ServerMessenger serverMessenger;
     private SecureMessenger datacenterMessenger;
     private Messenger locationMessenger;
 
-    public EdgeServer(final CryptoService cryptoService, final EnvOrInputFactory envOrInputFactory)
+    public EdgeServer(final EnvOrInputFactory envOrInputFactory)
             throws IOException {
-        this.oldCryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
 
         final var rsaPair = CryptoServiceFactory.rsaPair();
-        this.publicEncryptionKey = rsaPair.getPublicKey();
+        this.publicKey = rsaPair.getPublicKey();
 
         this.asymmetricCryptoService = rsaPair.getPrivateSide();
         this.serverMessenger = ServerMessengerFactory.secureUdp(asymmetricCryptoService);
@@ -58,7 +56,7 @@ public class EdgeServer {
         connectToLocationServer();
         register();
         locateDatacenterServer();
-        serverMessenger.subscribe(this::useSymmetric);
+        serverMessenger.subscribe(this::serveSymmetric);
     }
 
     @SneakyThrows
@@ -83,7 +81,7 @@ public class EdgeServer {
                 .withValue(Fields.SERVER_TYPE, ServerType.EDGE)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
                 .withValue(Fields.PORT, serverMessenger.getPort())
-                .withValue(Fields.PUBLIC_KEY, publicEncryptionKey.getEncoded());
+                .withValue(Fields.PUBLIC_KEY, publicKey.getEncoded());
 
         locationMessenger.send(request);
 
@@ -106,10 +104,7 @@ public class EdgeServer {
             final var response = locationMessenger.receive();
 
             if (response.getType().equals(MessageType.OK)) {
-                final var host = (String) response.getValues().get(Fields.HOST);
-                final var port = (int) response.getValues().get(Fields.PORT);
-
-                datacenterMessenger = MessengerFactory.secureTcp(host, port, oldCryptoService);
+                datacenterMessenger = useSymmetric(response);
             }
 
             if (datacenterMessenger == null) {
@@ -118,7 +113,7 @@ public class EdgeServer {
         } while (datacenterMessenger == null);
     }
 
-    private Message useSymmetric(final Message request) {
+    private Message serveSymmetric(final Message request) {
         if (MessageType.USE_SYMMETRIC.equals(request.getType())) {
             log.info("Nova conexão assimétrica. Preparando-se para usar simétrica.");
 
@@ -137,6 +132,27 @@ public class EdgeServer {
         } else {
             return MessageFactory.error("Tipo de mensagem não suportada");
         }
+    }
+
+    private SecureMessenger useSymmetric(final Message locationResponse) {
+        final var asymmetricHost = (String) locationResponse.getValues().get(Fields.HOST);
+        final var asymmetricPort = (int) locationResponse.getValues().get(Fields.PORT);
+        final var datacenterPublicKey = (String) locationResponse.getValues().get(Fields.PUBLIC_KEY);
+
+        final var datacenterAsymmetricCryptoService = CryptoServiceFactory.publicRsa(datacenterPublicKey);
+        final var asymmetricMessenger = MessengerFactory.secureUdp(asymmetricHost, asymmetricPort,
+                datacenterAsymmetricCryptoService);
+
+        final var request = new Message(MessageType.USE_SYMMETRIC);
+        asymmetricMessenger.send(request);
+
+        final var response = asymmetricMessenger.receive();
+        final var symmetricPort = (int) response.getValues().get(Fields.PORT);
+        final var encryptionKey = (String) response.getValues().get("ENCRYPTION_KEY");
+        final var hmacKey = (String) response.getValues().get("HMAC_KEY");
+
+        final var symmetricCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+        return MessengerFactory.secureUdp(asymmetricHost, symmetricPort, symmetricCryptoService);
     }
 
     private Message handleRequest(final Message request) {

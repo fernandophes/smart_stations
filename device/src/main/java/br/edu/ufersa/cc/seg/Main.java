@@ -22,7 +22,7 @@ public class Main {
         final var device = new Device(name, factory);
 
         device.start();
-        factory.close();
+        factory.close(); 
     }
 
 }

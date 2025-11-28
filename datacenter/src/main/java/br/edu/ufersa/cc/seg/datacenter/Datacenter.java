@@ -2,11 +2,13 @@ package br.edu.ufersa.cc.seg.datacenter;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.security.PublicKey;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
+import br.edu.ufersa.cc.seg.common.factories.CryptoServiceFactory;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
@@ -28,8 +30,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Datacenter {
 
-    private final CryptoService cryptoService;
+    private final CryptoService asymmetricCryptoService;
     private final EnvOrInputFactory envOrInputFactory;
+
+    private final PublicKey publicKey;
 
     private final Javalin httpServer;
     private final ServerMessenger serverMessenger;
@@ -40,17 +44,22 @@ public class Datacenter {
      */
     private final SnapshotService snapshotService = new SnapshotService();
 
-    public Datacenter(final CryptoService cryptoService, final EnvOrInputFactory envOrInputFactory)
+    public Datacenter(final EnvOrInputFactory envOrInputFactory)
             throws IOException {
-        this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
-        this.serverMessenger = ServerMessengerFactory.secureTcp(cryptoService);
+
+        final var rsaPair = CryptoServiceFactory.rsaPair();
+        this.publicKey = rsaPair.getPublicKey();
+
+        this.asymmetricCryptoService = rsaPair.getPrivateSide();
+        this.serverMessenger = ServerMessengerFactory.secureUdp(asymmetricCryptoService);
+
         httpServer = Javalin.create();
     }
 
     public void start() {
         connectToLocationServer();
-        serverMessenger.subscribe(this::handleRequest);
+        serverMessenger.subscribe(this::serveSymmetric);
         configureHttpServer();
         register();
     }
@@ -76,7 +85,8 @@ public class Datacenter {
         final var request = new Message(MessageType.REGISTER_SERVER)
                 .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
-                .withValue(Fields.PORT, serverMessenger.getPort());
+                .withValue(Fields.PORT, serverMessenger.getPort())
+                .withValue(Fields.PUBLIC_KEY, publicKey.getEncoded());
 
         locationMessenger.send(request);
 
@@ -105,6 +115,27 @@ public class Datacenter {
                 .start(8480);
 
         log.info("Servidor HTTP iniciado na porta {}", httpServer.port());
+    }
+
+    private Message serveSymmetric(final Message request) {
+        if (MessageType.USE_SYMMETRIC.equals(request.getType())) {
+            log.info("Nova conexão assimétrica. Preparando-se para usar simétrica.");
+
+            final var encryptionKey = CryptoServiceFactory.generateAESKey();
+            final var hmacKey = CryptoServiceFactory.generateAESKey();
+
+            final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+            final var symmetricMessenger = ServerMessengerFactory.secureUdp(cryptoService);
+            symmetricMessenger.subscribe(this::handleRequest);
+            log.info("Aguardando mensagens simétricas...");
+
+            return MessageFactory.ok()
+                    .withValue(Fields.PORT, symmetricMessenger.getPort())
+                    .withValue("ENCRYPTION_KEY", encryptionKey.getEncoded())
+                    .withValue("HMAC_KEY", hmacKey.getEncoded());
+        } else {
+            return MessageFactory.error("Tipo de mensagem não suportada");
+        }
     }
 
     private Message handleRequest(final Message request) {
