@@ -44,6 +44,8 @@ public abstract class Messenger implements Closeable {
         }
     }
 
+    public abstract int getPort();
+
     public abstract void send(Message message);
 
     public abstract Message receive();
