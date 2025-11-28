@@ -13,7 +13,7 @@ import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
-import br.edu.ufersa.cc.seg.common.messengers.Messenger;
+import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
@@ -35,8 +35,8 @@ public class Device {
     private final CryptoService cryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
-    private Messenger locationMessenger;
-    private Messenger edgeMessenger;
+    private SecureMessenger locationMessenger;
+    private SecureMessenger edgeMessenger;
 
     private TimerTask subscription;
 

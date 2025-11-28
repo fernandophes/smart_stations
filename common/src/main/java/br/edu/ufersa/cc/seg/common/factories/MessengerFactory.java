@@ -4,10 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import br.edu.ufersa.cc.seg.common.concrete_messengers.TcpMessenger;
-import br.edu.ufersa.cc.seg.common.concrete_messengers.UdpMessenger;
+import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureTcpMessenger;
+import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureUdpMessenger;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
-import br.edu.ufersa.cc.seg.common.messengers.Messenger;
+import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
@@ -22,10 +22,10 @@ public abstract class MessengerFactory {
         private final int port;
     }
 
-    private static final Map<MessengerInfo, TcpMessenger> TCP_MESSENGERS = new HashMap<>();
-    private static final Map<MessengerInfo, UdpMessenger> UDP_MESSENGERS = new HashMap<>();
+    private static final Map<MessengerInfo, SecureTcpMessenger> TCP_MESSENGERS = new HashMap<>();
+    private static final Map<MessengerInfo, SecureUdpMessenger> UDP_MESSENGERS = new HashMap<>();
 
-    public static Messenger tcp(final String host, final int port, final CryptoService cryptoService) {
+    public static SecureMessenger tcp(final String host, final int port, final CryptoService cryptoService) {
         final var info = new MessengerInfo(host, port);
 
         return Optional.ofNullable(TCP_MESSENGERS.get(info))
@@ -37,7 +37,7 @@ public abstract class MessengerFactory {
                 });
     }
 
-    public static Messenger udp(final String host, final int port, final CryptoService cryptoService) {
+    public static SecureMessenger udp(final String host, final int port, final CryptoService cryptoService) {
         final var info = new MessengerInfo(host, port);
 
         return Optional.ofNullable(UDP_MESSENGERS.get(info))
@@ -50,15 +50,15 @@ public abstract class MessengerFactory {
     }
 
     @SneakyThrows
-    private static TcpMessenger createTcpMessenger(final String host, final int port,
+    private static SecureTcpMessenger createTcpMessenger(final String host, final int port,
             final CryptoService cryptoService) {
-        return new TcpMessenger(host, port, cryptoService);
+        return new SecureTcpMessenger(host, port, cryptoService);
     }
 
     @SneakyThrows
-    private static UdpMessenger createUdpMessenger(final String host, final int port,
+    private static SecureUdpMessenger createUdpMessenger(final String host, final int port,
             final CryptoService cryptoService) {
-        return new UdpMessenger(host, port, cryptoService);
+        return new SecureUdpMessenger(host, port, cryptoService);
     }
 
 }

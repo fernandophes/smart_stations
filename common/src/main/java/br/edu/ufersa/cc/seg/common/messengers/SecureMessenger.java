@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract class Messenger implements Closeable {
+public abstract class SecureMessenger implements Closeable {
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public class Subscription implements Closeable {

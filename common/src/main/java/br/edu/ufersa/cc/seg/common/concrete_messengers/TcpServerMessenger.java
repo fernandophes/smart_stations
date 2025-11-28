@@ -47,14 +47,14 @@ public class TcpServerMessenger implements ServerMessenger {
         }
 
         @SneakyThrows
-        private TcpMessenger accept() {
-            return new TcpMessenger(socket, cryptoService);
+        private SecureTcpMessenger accept() {
+            return new SecureTcpMessenger(socket, cryptoService);
         }
     }
 
     @Value
     public static class ClientRegistration {
-        TcpMessenger messenger;
+        SecureTcpMessenger messenger;
         Message firstMessage;
     }
 

@@ -9,7 +9,7 @@ import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
 import br.edu.ufersa.cc.seg.common.factories.ServerMessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
-import br.edu.ufersa.cc.seg.common.messengers.Messenger;
+import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
@@ -26,8 +26,8 @@ public class EdgeServer {
     private final EnvOrInputFactory envOrInputFactory;
 
     private final ServerMessenger serverMessenger;
-    private Messenger locationMessenger;
-    private Messenger datacenterMessenger;
+    private SecureMessenger locationMessenger;
+    private SecureMessenger datacenterMessenger;
 
     public EdgeServer(final CryptoService cryptoService, final EnvOrInputFactory envOrInputFactory)
             throws IOException {

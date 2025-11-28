@@ -9,16 +9,16 @@ import java.net.Socket;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
-import br.edu.ufersa.cc.seg.common.messengers.Messenger;
+import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import lombok.SneakyThrows;
 
-public class TcpMessenger extends Messenger {
+public class SecureTcpMessenger extends SecureMessenger {
 
     private final Socket socket;
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
 
-    public TcpMessenger(final Socket socket, final CryptoService cryptoService) throws IOException {
+    public SecureTcpMessenger(final Socket socket, final CryptoService cryptoService) throws IOException {
         super(cryptoService);
 
         this.socket = socket;
@@ -26,11 +26,11 @@ public class TcpMessenger extends Messenger {
         this.in = new ObjectInputStream(socket.getInputStream());
     }
 
-    public TcpMessenger(final String host, final int port, final CryptoService cryptoService) throws IOException {
+    public SecureTcpMessenger(final String host, final int port, final CryptoService cryptoService) throws IOException {
         this(new Socket(host, port), cryptoService);
     }
 
-    public TcpMessenger(final ServerSocket serverSocket, final CryptoService cryptoService) throws IOException {
+    public SecureTcpMessenger(final ServerSocket serverSocket, final CryptoService cryptoService) throws IOException {
         this(serverSocket.accept(), cryptoService);
     }
 

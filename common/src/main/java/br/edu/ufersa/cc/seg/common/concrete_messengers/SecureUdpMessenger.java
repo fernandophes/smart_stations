@@ -8,18 +8,18 @@ import java.net.InetAddress;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
-import br.edu.ufersa.cc.seg.common.messengers.Messenger;
+import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class UdpMessenger extends Messenger {
+public class SecureUdpMessenger extends SecureMessenger {
 
     private final DatagramSocket socket;
     private final InetAddress destinationHost;
     private final int destinationPort;
 
-    public UdpMessenger(final String destinationHost, final int destinationPort,
+    public SecureUdpMessenger(final String destinationHost, final int destinationPort,
             final CryptoService cryptoService) throws IOException {
         super(cryptoService);
         this.socket = new DatagramSocket();

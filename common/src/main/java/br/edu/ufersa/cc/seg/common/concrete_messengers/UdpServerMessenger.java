@@ -47,7 +47,7 @@ public class UdpServerMessenger implements ServerMessenger {
             final var packet = new DatagramPacket(bytes, bytes.length);
             socket.receive(packet);
 
-            final var client = new UdpMessenger(packet.getAddress().getHostName(), packet.getPort(), cryptoService);
+            final var client = new SecureUdpMessenger(packet.getAddress().getHostName(), packet.getPort(), cryptoService);
 
             return new ClientRegistration(client, client.receive(packet));
         }
@@ -61,7 +61,7 @@ public class UdpServerMessenger implements ServerMessenger {
 
     @Value
     public static class ClientRegistration {
-        UdpMessenger messenger;
+        SecureUdpMessenger messenger;
         Message firstMessage;
     }
 
