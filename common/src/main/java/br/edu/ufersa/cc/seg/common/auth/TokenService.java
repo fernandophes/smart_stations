@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class TokenService {
 
-    private final String secret;
+    private final String jwtSecret;
 
     public String generateToken(final String identifier, final InstanceType instanceType) {
         return JWT.create()
@@ -21,11 +21,11 @@ public class TokenService {
                 .withSubject(identifier)
                 .withClaim("instanceType", instanceType.name())
                 .withExpiresAt(generateExpirationDate())
-                .sign(Algorithm.HMAC256(secret));
+                .sign(Algorithm.HMAC256(jwtSecret));
     }
 
     public String validateToken(final String token, final InstanceType instanceType) {
-        return JWT.require(Algorithm.HMAC256(secret))
+        return JWT.require(Algorithm.HMAC256(jwtSecret))
                 .withIssuer("smart-stations")
                 .withClaim("instanceType", instanceType.name())
                 .build()

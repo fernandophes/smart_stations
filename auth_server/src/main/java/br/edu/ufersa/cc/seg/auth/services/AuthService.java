@@ -7,15 +7,13 @@ public class AuthService {
 
     private final InstanceService instanceService = new InstanceService();
     private final TokenService tokenService;
-    private final String secret;
 
-    public AuthService() {
-        this.secret = "";
-        this.tokenService = new TokenService(secret);
+    public AuthService(final String jwtSecret) {
+        this.tokenService = new TokenService(jwtSecret);
     }
 
-    public String authenticate(final String identifier, final String secret) throws AuthFailureException {
-        return instanceService.getByIdentifierAndSecret(identifier, secret)
+    public String authenticate(final String identifier, final String instanceSecret) throws AuthFailureException {
+        return instanceService.getByIdentifierAndSecret(identifier, instanceSecret)
                 .map(instance -> tokenService.generateToken(identifier, instance.getType()))
                 .orElseThrow(() -> new AuthFailureException("Falha na autenticação"));
     }

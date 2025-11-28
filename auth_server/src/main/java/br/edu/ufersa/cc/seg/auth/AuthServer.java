@@ -25,13 +25,16 @@ public class AuthServer {
 
     private final EnvOrInputFactory envOrInputFactory;
 
-    private final AuthService service = new AuthService();
+    private final AuthService service;
     private final InstanceService instanceService = new InstanceService();
     private final ServerMessenger serverMessenger = ServerMessengerFactory.tcp();
     private Messenger locationMessenger;
 
     public AuthServer(final EnvOrInputFactory envOrInputFactory) {
         this.envOrInputFactory = envOrInputFactory;
+
+        final var secret = envOrInputFactory.getString("JWT_SECRET");
+        service = new AuthService(secret);
     }
 
     public void start() {
@@ -91,6 +94,9 @@ public class AuthServer {
     }
 
     private void seed() {
+        final var sensor = new InstanceDto().setType(InstanceType.DEVICE).setIdentifier("sensor-a");
+        instanceService.create(sensor, "sensor123");
+
         final var post = new InstanceDto().setType(InstanceType.DEVICE).setIdentifier("post-a");
         instanceService.create(post, "post123");
 

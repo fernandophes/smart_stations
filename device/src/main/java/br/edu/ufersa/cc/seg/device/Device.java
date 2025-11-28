@@ -37,6 +37,7 @@ public class Device {
     private final EnvOrInputFactory envOrInputFactory;
 
     private Messenger locationMessenger;
+    private Messenger authMessenger;
     private SecureMessenger edgeMessenger;
 
     private TimerTask subscription;
@@ -44,13 +45,16 @@ public class Device {
     private boolean isRunning;
 
     public void start() {
-        connectLocationServer();
+        connectToLocationServer();
+        locateAuthServer();
+        final var token = authenticate();
         locateEdgeServer();
 
         subscription = new TimerTask() {
             @Override
             public void run() {
-                final var snapshot = simulateReading();
+                final var snapshot = simulateReading()
+                        .withValue("token", token);
                 log.info("Leitura feita: {}", snapshot);
                 edgeMessenger.send(snapshot);
             }
@@ -61,11 +65,59 @@ public class Device {
     }
 
     @SneakyThrows
-    private void connectLocationServer() {
+    public void close() {
+        if (isRunning()) {
+            subscription.cancel();
+            log.info("Atividade do dispositivo {} finalizada", name);
+        }
+
+        envOrInputFactory.close();
+        edgeMessenger.close();
+        locationMessenger.close();
+    }
+
+    @SneakyThrows
+    private void connectToLocationServer() {
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
         locationMessenger = MessengerFactory.udp(locationHost, locationPort);
+    }
+
+    @SneakyThrows
+    private void locateAuthServer() {
+        final var request = new Message(MessageType.LOCATE_SERVER)
+                .withValue(Fields.SERVER_TYPE, ServerType.AUTH);
+
+        do {
+            locationMessenger.send(request);
+            final var response = locationMessenger.receive();
+
+            if (response.getType().equals(MessageType.OK)) {
+                final var host = (String) response.getValues().get(Fields.HOST);
+                final var port = (int) response.getValues().get(Fields.PORT);
+
+                authMessenger = MessengerFactory.tcp(host, port);
+            }
+
+            if (authMessenger == null) {
+                Thread.sleep(INTERVAL);
+            }
+        } while (authMessenger == null);
+    }
+
+    private String authenticate() {
+        final var identifier = envOrInputFactory.getString("IDENTIFIER");
+        final var secret = envOrInputFactory.getString("SECRET");
+
+        final var request = new Message(MessageType.AUTHENTICATE)
+                .withValue("identifier", identifier)
+                .withValue("secret", secret);
+
+        authMessenger.send(request);
+        final var response = authMessenger.receive();
+
+        return (String) response.getValues().get("token");
     }
 
     @SneakyThrows
@@ -103,18 +155,6 @@ public class Device {
         }
 
         return snapshot;
-    }
-
-    @SneakyThrows
-    public void close() {
-        if (isRunning()) {
-            subscription.cancel();
-            log.info("Atividade do dispositivo {} finalizada", name);
-        }
-
-        envOrInputFactory.close();
-        edgeMessenger.close();
-        locationMessenger.close();
     }
 
 }
