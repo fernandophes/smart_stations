@@ -13,6 +13,7 @@ public enum MessageType {
     REMOVE_SERVER,
     SEND_SNAPSHOT,
     STORE_SNAPSHOT,
+    AUTHENTICATE,
 
     /*
      * Responses
