@@ -8,7 +8,7 @@ import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureTcpMessenger;
 import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureUdpMessenger;
 import br.edu.ufersa.cc.seg.common.concrete_messengers.TcpMessenger;
 import br.edu.ufersa.cc.seg.common.concrete_messengers.UdpMessenger;
-import br.edu.ufersa.cc.seg.common.crypto.AESService;
+import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import lombok.AccessLevel;
@@ -54,7 +54,7 @@ public abstract class MessengerFactory {
                 });
     }
 
-    public static SecureMessenger secureTcp(final String host, final int port, final AESService cryptoService) {
+    public static SecureMessenger secureTcp(final String host, final int port, final CryptoService cryptoService) {
         final var info = new MessengerInfo(host, port);
 
         return Optional.ofNullable(SECURE_TCP_MESSENGERS.get(info))
@@ -66,7 +66,7 @@ public abstract class MessengerFactory {
                 });
     }
 
-    public static SecureMessenger secureUdp(final String host, final int port, final AESService cryptoService) {
+    public static SecureMessenger secureUdp(final String host, final int port, final CryptoService cryptoService) {
         final var info = new MessengerInfo(host, port);
 
         return Optional.ofNullable(SECURE_UDP_MESSENGERS.get(info))
@@ -90,13 +90,13 @@ public abstract class MessengerFactory {
 
     @SneakyThrows
     private static SecureTcpMessenger createSecureTcpMessenger(final String host, final int port,
-            final AESService cryptoService) {
+            final CryptoService cryptoService) {
         return new SecureTcpMessenger(host, port, cryptoService);
     }
 
     @SneakyThrows
     private static SecureUdpMessenger createSecureUdpMessenger(final String host, final int port,
-            final AESService cryptoService) {
+            final CryptoService cryptoService) {
         return new SecureUdpMessenger(host, port, cryptoService);
     }
 

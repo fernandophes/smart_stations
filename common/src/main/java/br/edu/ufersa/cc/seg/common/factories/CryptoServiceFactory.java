@@ -1,8 +1,8 @@
 package br.edu.ufersa.cc.seg.common.factories;
 
-import br.edu.ufersa.cc.seg.common.crypto.AESService;
+import br.edu.ufersa.cc.seg.common.concrete_crypto.AESService;
+import br.edu.ufersa.cc.seg.common.concrete_crypto.RSAService;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
-import br.edu.ufersa.cc.seg.common.crypto.RSAService;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 

@@ -6,7 +6,7 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import br.edu.ufersa.cc.seg.common.crypto.AESService;
+import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
@@ -18,7 +18,7 @@ public class SecureTcpMessenger extends SecureMessenger {
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
 
-    public SecureTcpMessenger(final Socket socket, final AESService cryptoService) throws IOException {
+    public SecureTcpMessenger(final Socket socket, final CryptoService cryptoService) throws IOException {
         super(cryptoService);
 
         this.socket = socket;
@@ -26,11 +26,11 @@ public class SecureTcpMessenger extends SecureMessenger {
         this.in = new ObjectInputStream(socket.getInputStream());
     }
 
-    public SecureTcpMessenger(final String host, final int port, final AESService cryptoService) throws IOException {
+    public SecureTcpMessenger(final String host, final int port, final CryptoService cryptoService) throws IOException {
         this(new Socket(host, port), cryptoService);
     }
 
-    public SecureTcpMessenger(final ServerSocket serverSocket, final AESService cryptoService) throws IOException {
+    public SecureTcpMessenger(final ServerSocket serverSocket, final CryptoService cryptoService) throws IOException {
         this(serverSocket.accept(), cryptoService);
     }
 

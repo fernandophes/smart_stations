@@ -5,7 +5,8 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.Scanner;
 
-import br.edu.ufersa.cc.seg.common.crypto.AESService;
+import br.edu.ufersa.cc.seg.common.concrete_crypto.AESService;
+import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -45,7 +46,7 @@ public class EnvOrInputFactory implements Closeable {
         return getInt("PORT");
     }
 
-    public AESService cryptoService() {
+    public CryptoService aesService() {
         // Obter chaves
         final var encriptionKey = encriptionKey();
         final var hmacKey = hmacKey();

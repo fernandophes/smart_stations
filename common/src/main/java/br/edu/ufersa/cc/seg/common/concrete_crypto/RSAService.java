@@ -1,4 +1,4 @@
-package br.edu.ufersa.cc.seg.common.crypto;
+package br.edu.ufersa.cc.seg.common.concrete_crypto;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -16,6 +16,9 @@ import javax.crypto.spec.SecretKeySpec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import br.edu.ufersa.cc.seg.common.crypto.CryptoException;
+import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
+import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 

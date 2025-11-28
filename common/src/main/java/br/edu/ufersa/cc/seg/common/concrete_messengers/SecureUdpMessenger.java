@@ -5,7 +5,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-import br.edu.ufersa.cc.seg.common.crypto.AESService;
+import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
@@ -20,7 +20,7 @@ public class SecureUdpMessenger extends SecureMessenger {
     private final int destinationPort;
 
     public SecureUdpMessenger(final String destinationHost, final int destinationPort,
-            final AESService cryptoService) throws IOException {
+            final CryptoService cryptoService) throws IOException {
         super(cryptoService);
         this.socket = new DatagramSocket();
         this.destinationHost = InetAddress.getByName(destinationHost);

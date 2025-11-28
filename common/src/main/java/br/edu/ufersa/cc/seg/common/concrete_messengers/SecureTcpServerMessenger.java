@@ -6,7 +6,7 @@ import java.net.ServerSocket;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
-import br.edu.ufersa.cc.seg.common.crypto.AESService;
+import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import lombok.AccessLevel;
@@ -52,17 +52,17 @@ public class SecureTcpServerMessenger implements ServerMessenger {
     }
 
     private final ServerSocket serverSocket;
-    private final AESService cryptoService;
+    private final CryptoService cryptoService;
 
-    public SecureTcpServerMessenger(final AESService cryptoService) throws IOException {
+    public SecureTcpServerMessenger(final CryptoService cryptoService) throws IOException {
         this(new ServerSocket(0), cryptoService);
     }
 
-    public SecureTcpServerMessenger(final int port, final AESService cryptoService) throws IOException {
+    public SecureTcpServerMessenger(final int port, final CryptoService cryptoService) throws IOException {
         this(new ServerSocket(port), cryptoService);
     }
 
-    private SecureTcpServerMessenger(final ServerSocket socket, final AESService cryptoService) {
+    private SecureTcpServerMessenger(final ServerSocket socket, final CryptoService cryptoService) {
         this.serverSocket = socket;
         this.cryptoService = cryptoService;
     }

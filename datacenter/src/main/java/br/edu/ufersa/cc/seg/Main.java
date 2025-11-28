@@ -18,7 +18,7 @@ public class Main {
                 .orElse(System.in);
 
         final var factory = new EnvOrInputFactory(new Scanner(input));
-        final var server = new Datacenter(factory.cryptoService(), factory);
+        final var server = new Datacenter(factory.aesService(), factory);
 
         server.start();
         factory.close();

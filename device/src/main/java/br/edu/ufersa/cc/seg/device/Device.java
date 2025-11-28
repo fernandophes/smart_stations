@@ -9,7 +9,7 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import br.edu.ufersa.cc.seg.common.crypto.AESService;
+import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
@@ -33,7 +33,7 @@ public class Device {
     private static final Timer TIMER = new Timer();
 
     private final String name;
-    private final AESService cryptoService;
+    private final CryptoService cryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
     private Messenger locationMessenger;
