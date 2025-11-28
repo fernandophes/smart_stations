@@ -10,32 +10,31 @@ import javax.crypto.Cipher;
 
 import lombok.SneakyThrows;
 
-public class KeyPairService {
+public class RSAService {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     public static final int KEY_SIZE = 2048;
     public static final String TRANSFORMATION = "RSA";
 
     private final PublicKey publicKey;
     private final PrivateKey privateKey;
-    private final SecureRandom secureRandom;
 
-    public KeyPairService() {
-        this.secureRandom = new SecureRandom();
-
+    public RSAService() {
         final var pair = generateKeys();
         this.privateKey = pair.getPrivate();
         this.publicKey = pair.getPublic();
     }
 
     @SneakyThrows
-    public byte[] encode(final byte[] message) {
+    public byte[] encrypt(final byte[] message) {
         final var cipher = Cipher.getInstance(TRANSFORMATION);
         cipher.init(Cipher.ENCRYPT_MODE, privateKey);
         return cipher.doFinal(message);
     }
 
     @SneakyThrows
-    public byte[] decode(final byte[] message) {
+    public byte[] decrypt(final byte[] message) {
         final var cipher = Cipher.getInstance(TRANSFORMATION);
         cipher.init(Cipher.DECRYPT_MODE, publicKey);
         return cipher.doFinal(message);
@@ -44,7 +43,7 @@ public class KeyPairService {
     @SneakyThrows
     private KeyPair generateKeys() {
         final var generator = KeyPairGenerator.getInstance(TRANSFORMATION);
-        generator.initialize(KEY_SIZE, secureRandom);
+        generator.initialize(KEY_SIZE, SECURE_RANDOM);
         return generator.generateKeyPair();
     }
 
