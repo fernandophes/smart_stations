@@ -1,9 +1,12 @@
 package br.edu.ufersa.cc.seg.auth;
 
 import java.net.InetAddress;
+import java.util.List;
 
+import br.edu.ufersa.cc.seg.auth.dto.InstanceDto;
 import br.edu.ufersa.cc.seg.auth.exceptions.AuthFailureException;
 import br.edu.ufersa.cc.seg.auth.services.AuthService;
+import br.edu.ufersa.cc.seg.auth.services.InstanceService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
@@ -12,6 +15,7 @@ import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
+import br.edu.ufersa.cc.seg.common.utils.InstanceType;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
 import lombok.SneakyThrows;
@@ -23,6 +27,7 @@ public class AuthServer {
     private final EnvOrInputFactory envOrInputFactory;
 
     private final AuthService service = new AuthService();
+    private final InstanceService instanceService = new InstanceService();
     private final ServerMessenger serverMessenger = ServerMessengerFactory.tcp();
     private Messenger locationMessenger;
 
@@ -34,6 +39,7 @@ public class AuthServer {
         connectToLocationServer();
         register();
         serverMessenger.subscribe(this::handleRequest);
+        seed();
     }
 
     @SneakyThrows
@@ -83,6 +89,17 @@ public class AuthServer {
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
         locationMessenger = MessengerFactory.udp(locationHost, locationPort);
+    }
+
+    private void seed() {
+        final var post = new InstanceDto().setType(InstanceType.DEVICE).setIdentifier("post-a");
+        instanceService.create(post, "post123");
+
+        final var semaphor = new InstanceDto().setType(InstanceType.DEVICE).setIdentifier("semaphor-a");
+        instanceService.create(semaphor, "semaphor123");
+
+        final var edge = new InstanceDto().setType(InstanceType.EDGE).setIdentifier("edge-a");
+        instanceService.create(edge, "edge123");
     }
 
 }
