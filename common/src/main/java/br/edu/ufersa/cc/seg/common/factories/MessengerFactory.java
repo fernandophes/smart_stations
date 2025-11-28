@@ -6,7 +6,10 @@ import java.util.Optional;
 
 import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureTcpMessenger;
 import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureUdpMessenger;
+import br.edu.ufersa.cc.seg.common.concrete_messengers.TcpMessenger;
+import br.edu.ufersa.cc.seg.common.concrete_messengers.UdpMessenger;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -22,8 +25,34 @@ public abstract class MessengerFactory {
         private final int port;
     }
 
+    private static final Map<MessengerInfo, TcpMessenger> TCP_MESSENGERS = new HashMap<>();
+    private static final Map<MessengerInfo, UdpMessenger> UDP_MESSENGERS = new HashMap<>();
     private static final Map<MessengerInfo, SecureTcpMessenger> SECURE_TCP_MESSENGERS = new HashMap<>();
     private static final Map<MessengerInfo, SecureUdpMessenger> SECURE_UDP_MESSENGERS = new HashMap<>();
+
+    public static Messenger tcp(final String host, final int port) {
+        final var info = new MessengerInfo(host, port);
+
+        return Optional.ofNullable(TCP_MESSENGERS.get(info))
+                .orElseGet(() -> {
+                    final var messenger = createTcpMessenger(host, port);
+                    TCP_MESSENGERS.put(info, messenger);
+
+                    return messenger;
+                });
+    }
+
+    public static Messenger udp(final String host, final int port) {
+        final var info = new MessengerInfo(host, port);
+
+        return Optional.ofNullable(UDP_MESSENGERS.get(info))
+                .orElseGet(() -> {
+                    final var messenger = createUdpMessenger(host, port);
+                    UDP_MESSENGERS.put(info, messenger);
+
+                    return messenger;
+                });
+    }
 
     public static SecureMessenger secureTcp(final String host, final int port, final CryptoService cryptoService) {
         final var info = new MessengerInfo(host, port);
@@ -47,6 +76,16 @@ public abstract class MessengerFactory {
 
                     return messenger;
                 });
+    }
+
+    @SneakyThrows
+    private static TcpMessenger createTcpMessenger(final String host, final int port) {
+        return new TcpMessenger(host, port);
+    }
+
+    @SneakyThrows
+    private static UdpMessenger createUdpMessenger(final String host, final int port) {
+        return new UdpMessenger(host, port);
     }
 
     @SneakyThrows
