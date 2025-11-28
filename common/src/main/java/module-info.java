@@ -1,9 +1,10 @@
 module common {
     exports br.edu.ufersa.cc.seg.common.dto;
+    exports br.edu.ufersa.cc.seg.common.auth;
     exports br.edu.ufersa.cc.seg.common.utils;
     exports br.edu.ufersa.cc.seg.common.crypto;
-    exports br.edu.ufersa.cc.seg.common.messengers;
     exports br.edu.ufersa.cc.seg.common.factories;
+    exports br.edu.ufersa.cc.seg.common.messengers;
 
     opens br.edu.ufersa.cc.seg.common.messengers to com.fasterxml.jackson.databind;
     opens br.edu.ufersa.cc.seg.common.utils to com.fasterxml.jackson.databind;
