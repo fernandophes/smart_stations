@@ -1,7 +1,6 @@
 package br.edu.ufersa.cc.seg.auth;
 
 import java.net.InetAddress;
-import java.util.List;
 
 import br.edu.ufersa.cc.seg.auth.dto.InstanceDto;
 import br.edu.ufersa.cc.seg.auth.exceptions.AuthFailureException;
