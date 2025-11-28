@@ -24,7 +24,8 @@ public class LocationServer {
     private class Location {
         String host;
         int port;
-        PublicKey publicKey;
+        PublicKey publicEncriptionKey;
+        PublicKey publicHmacKey;
     }
 
     private final Map<ServerType, Location> locations = new HashMap<>();
@@ -39,9 +40,11 @@ public class LocationServer {
         serverMessenger.subscribe(this::handleRequest);
     }
 
-    public void register(final ServerType serverType, final String host, final int port, final PublicKey publicKey) {
-        log.info("Registrando {} na localização {}:{} e sua chave pública {}", serverType, host, port, publicKey);
-        locations.put(serverType, new Location(host, port, publicKey));
+    public void register(final ServerType serverType, final String host, final int port,
+            final PublicKey publicEncriptionKey, final PublicKey publicHmacKey) {
+        log.info("Registrando {} na localização {}:{} e sua chave pública {}", serverType, host, port,
+                publicEncriptionKey);
+        locations.put(serverType, new Location(host, port, publicEncriptionKey, publicHmacKey));
     }
 
     public Optional<Location> locate(final ServerType serverType) {
@@ -66,8 +69,9 @@ public class LocationServer {
                 final var serverType = ServerType.valueOf((String) request.getValues().get(Fields.SERVER_TYPE));
                 final var host = (String) request.getValues().get(Fields.HOST);
                 final var port = (int) request.getValues().get(Fields.PORT);
-                final var publicKey = (PublicKey) request.getValues().get(Fields.PUBLIC_KEY);
-                register(serverType, host, port, publicKey);
+                final var publicEncriptionKey = (PublicKey) request.getValues().get(Fields.PUBLIC_ENCRIPTION_KEY);
+                final var publicHmacKey = (PublicKey) request.getValues().get(Fields.PUBLIC_HMAC_KEY);
+                register(serverType, host, port, publicEncriptionKey, publicHmacKey);
                 return MessageFactory.ok();
             }
 
@@ -77,7 +81,8 @@ public class LocationServer {
                         .map(location -> MessageFactory.ok()
                                 .withValue(Fields.HOST, location.getHost())
                                 .withValue(Fields.PORT, location.getPort())
-                                .withValue(Fields.PUBLIC_KEY, location.getPublicKey()))
+                                .withValue(Fields.PUBLIC_ENCRIPTION_KEY, location.getPublicEncriptionKey())
+                                .withValue(Fields.PUBLIC_HMAC_KEY, location.getPublicHmacKey()))
                         .orElseGet(() -> MessageFactory.error("Servidor não localizado"));
             }
 
