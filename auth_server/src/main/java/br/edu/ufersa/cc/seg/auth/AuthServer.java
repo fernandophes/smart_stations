@@ -1,5 +1,7 @@
 package br.edu.ufersa.cc.seg.auth;
 
+import java.net.InetAddress;
+
 import br.edu.ufersa.cc.seg.auth.exceptions.AuthFailureException;
 import br.edu.ufersa.cc.seg.auth.services.AuthService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
@@ -9,9 +11,13 @@ import br.edu.ufersa.cc.seg.common.factories.ServerMessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
+import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
+import br.edu.ufersa.cc.seg.common.utils.ServerType;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class AuthServer {
 
     private final EnvOrInputFactory envOrInputFactory;
@@ -25,6 +31,8 @@ public class AuthServer {
     }
 
     public void start() {
+        connectToLocationServer();
+        register();
         serverMessenger.subscribe(this::handleRequest);
     }
 
@@ -47,6 +55,25 @@ public class AuthServer {
             }
         } else {
             return MessageFactory.error("Tipo de mensagem não suportada");
+        }
+    }
+
+    @SneakyThrows
+    private void register() {
+        log.info("Registrando-se no servidor de localização...");
+        final var request = new Message(MessageType.REGISTER_SERVER)
+                .withValue(Fields.SERVER_TYPE, ServerType.AUTH)
+                .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
+                .withValue(Fields.PORT, serverMessenger.getPort());
+
+        locationMessenger.send(request);
+
+        final var response = locationMessenger.receive();
+
+        if (response.getType().equals(MessageType.ERROR)) {
+            log.error("Erro ao registrar datacenter: {}", response.getValues());
+        } else {
+            log.info("Registrado no servidor de localização: {}");
         }
     }
 
