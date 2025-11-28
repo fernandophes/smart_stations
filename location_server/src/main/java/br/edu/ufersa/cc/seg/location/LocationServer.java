@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.ServerMessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
@@ -30,8 +29,8 @@ public class LocationServer {
     private final ServerMessenger serverMessenger;
     private Subscription subscription;
 
-    public LocationServer(final int port, final CryptoService cryptoService) throws IOException {
-        this.serverMessenger = ServerMessengerFactory.secureUdp(port, cryptoService);
+    public LocationServer(final int port) throws IOException {
+        this.serverMessenger = ServerMessengerFactory.udp(port);
     }
 
     public void start() {

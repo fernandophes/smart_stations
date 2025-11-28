@@ -17,7 +17,7 @@ public class Main {
                 .orElse(System.in);
 
         final var factory = new EnvOrInputFactory(new Scanner(input));
-        final var server = new LocationServer(factory.port(), factory.cryptoService());
+        final var server = new LocationServer(factory.port());
 
         server.start();
         factory.close();

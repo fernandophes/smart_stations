@@ -12,7 +12,7 @@ import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
 import br.edu.ufersa.cc.seg.common.factories.ServerMessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
-import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Element;
@@ -33,7 +33,7 @@ public class Datacenter {
 
     private final Javalin httpServer;
     private final ServerMessenger serverMessenger;
-    private SecureMessenger locationMessenger;
+    private Messenger locationMessenger;
 
     /*
      * Serviço do banco de dados
@@ -67,7 +67,7 @@ public class Datacenter {
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
-        locationMessenger = MessengerFactory.secureUdp(locationHost, locationPort, cryptoService);
+        locationMessenger = MessengerFactory.udp(locationHost, locationPort);
     }
 
     @SneakyThrows

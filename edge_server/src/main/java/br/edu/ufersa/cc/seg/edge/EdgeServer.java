@@ -9,6 +9,7 @@ import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
 import br.edu.ufersa.cc.seg.common.factories.ServerMessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
@@ -26,8 +27,8 @@ public class EdgeServer {
     private final EnvOrInputFactory envOrInputFactory;
 
     private final ServerMessenger serverMessenger;
-    private SecureMessenger locationMessenger;
     private SecureMessenger datacenterMessenger;
+    private Messenger locationMessenger;
 
     public EdgeServer(final CryptoService cryptoService, final EnvOrInputFactory envOrInputFactory)
             throws IOException {
@@ -55,7 +56,7 @@ public class EdgeServer {
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
-        locationMessenger = MessengerFactory.secureUdp(locationHost, locationPort, cryptoService);
+        locationMessenger = MessengerFactory.udp(locationHost, locationPort);
     }
 
     @SneakyThrows
