@@ -10,7 +10,7 @@ import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.ServerMessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
-import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger.Subscription;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger.Subscription;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
 import lombok.SneakyThrows;
