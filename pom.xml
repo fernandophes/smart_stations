@@ -25,6 +25,7 @@
         <module>location_server</module>
         <module>edge_server</module>
         <module>datacenter</module>
+        <module>auth_server</module>
         <!-- <module>client</module> -->
     </modules>
 
