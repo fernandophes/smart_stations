@@ -1,56 +1,51 @@
 package br.edu.ufersa.cc.seg.common.concrete_crypto;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.util.Base64;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import br.edu.ufersa.cc.seg.common.crypto.AsymmetricCryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoException;
+import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
-import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class RSAService implements AsymmetricCryptoService {
+@RequiredArgsConstructor
+public class RSAService implements CryptoService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private static final String CIPHER_ALGORITHM = "RSA";
     private static final String HMAC_ALGORITHM = "HmacSHA256";
-    private static final int KEY_SIZE = 2048;
     private static final int IV_SIZE = 16;
 
-    @Getter
-    private final PublicKey publicEncriptionKey;
-    private final PrivateKey privateEncriptionKey;
+    private final SecretKey encryptionKey;
+    private final SecretKey hmacKey;
 
-    @Getter
-    private final PublicKey publicHmacKey;
-    private final PrivateKey privateHmacKey;
+    public RSAService(final byte[] encryptionKey, final byte[] hmacKey) {
+        this.encryptionKey = new SecretKeySpec(encryptionKey, CIPHER_ALGORITHM);
+        this.hmacKey = new SecretKeySpec(encryptionKey, HMAC_ALGORITHM);
+    }
 
-    public RSAService() {
-        final var encriptionPair = generateKeys(CIPHER_ALGORITHM);
-        this.privateEncriptionKey = encriptionPair.getPrivate();
-        this.publicEncriptionKey = encriptionPair.getPublic();
-
-        final var hmacPair = generateKeys(HMAC_ALGORITHM);
-        this.privateHmacKey = hmacPair.getPrivate();
-        this.publicHmacKey = hmacPair.getPublic();
+    public RSAService(final String encryptionKey, final String hmacKey) {
+        this(Base64.getDecoder().decode(encryptionKey), Base64.getDecoder().decode(hmacKey));
     }
 
     @Override
     @SneakyThrows
     public SecureMessage encrypt(final byte[] message) {
+        log.debug("Criptografando mensagem...\n{}", new String(message));
+
         // Gerar IV aleatório
         final var iv = new byte[IV_SIZE];
         SECURE_RANDOM.nextBytes(iv);
@@ -58,7 +53,7 @@ public class RSAService implements AsymmetricCryptoService {
 
         // Cifrar a mensagem
         final var cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-        cipher.init(Cipher.ENCRYPT_MODE, privateEncriptionKey, ivSpec);
+        cipher.init(Cipher.ENCRYPT_MODE, encryptionKey, ivSpec);
         final var encrypted = cipher.doFinal(message);
 
         // Gera HMAC (encrypted + iv + timestamp para evitar replay)
@@ -97,18 +92,11 @@ public class RSAService implements AsymmetricCryptoService {
 
         // Se HMAC ok, decifra
         final var cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-        cipher.init(Cipher.DECRYPT_MODE, publicEncriptionKey, new IvParameterSpec(secureMessage.getIv()));
+        cipher.init(Cipher.DECRYPT_MODE, encryptionKey, new IvParameterSpec(secureMessage.getIv()));
         final var original = cipher.doFinal(secureMessage.getEncryptedContent());
         log.debug("Mensagem descriptografada:\n{}", new String(original));
 
         return original;
-    }
-
-    @SneakyThrows
-    private KeyPair generateKeys(final String algorithm) {
-        final var generator = KeyPairGenerator.getInstance(algorithm);
-        generator.initialize(KEY_SIZE, SECURE_RANDOM);
-        return generator.generateKeyPair();
     }
 
     /**
@@ -117,7 +105,7 @@ public class RSAService implements AsymmetricCryptoService {
     private byte[] generateHmac(final byte[] encrypted, final byte[] iv, final long timestamp) {
         try {
             final var mac = Mac.getInstance(HMAC_ALGORITHM);
-            mac.init(privateHmacKey);
+            mac.init(hmacKey);
 
             // HMAC(encrypted + iv + timestamp)
             mac.update(encrypted);
