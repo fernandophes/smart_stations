@@ -1,6 +1,7 @@
 package br.edu.ufersa.cc.seg.location;
 
 import java.io.IOException;
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +24,7 @@ public class LocationServer {
     private class Location {
         String host;
         int port;
+        PublicKey publicKey;
     }
 
     private final Map<ServerType, Location> locations = new HashMap<>();
@@ -37,9 +39,9 @@ public class LocationServer {
         serverMessenger.subscribe(this::handleRequest);
     }
 
-    public void register(final ServerType serverType, final String host, final int port) {
-        log.info("Registrando {} na localização {}:{}", serverType, host, port);
-        locations.put(serverType, new Location(host, port));
+    public void register(final ServerType serverType, final String host, final int port, final PublicKey publicKey) {
+        log.info("Registrando {} na localização {}:{} e sua chave pública {}", serverType, host, port, publicKey);
+        locations.put(serverType, new Location(host, port, publicKey));
     }
 
     public Optional<Location> locate(final ServerType serverType) {
@@ -64,7 +66,8 @@ public class LocationServer {
                 final var serverType = ServerType.valueOf((String) request.getValues().get(Fields.SERVER_TYPE));
                 final var host = (String) request.getValues().get(Fields.HOST);
                 final var port = (int) request.getValues().get(Fields.PORT);
-                register(serverType, host, port);
+                final var publicKey = (PublicKey) request.getValues().get(Fields.PUBLIC_KEY);
+                register(serverType, host, port, publicKey);
                 return MessageFactory.ok();
             }
 
@@ -73,7 +76,8 @@ public class LocationServer {
                 return locate(serverType)
                         .map(location -> MessageFactory.ok()
                                 .withValue(Fields.HOST, location.getHost())
-                                .withValue(Fields.PORT, location.getPort()))
+                                .withValue(Fields.PORT, location.getPort())
+                                .withValue(Fields.PUBLIC_KEY, location.getPublicKey()))
                         .orElseGet(() -> MessageFactory.error("Servidor não localizado"));
             }
 
