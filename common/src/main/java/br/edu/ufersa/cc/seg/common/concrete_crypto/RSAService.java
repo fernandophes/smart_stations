@@ -6,7 +6,6 @@ import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.util.Base64;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -39,7 +38,7 @@ public class RSAService implements AsymmetricCryptoService {
     private final PublicKey publicHmacKey;
     private final PrivateKey privateHmacKey;
 
-    public RSAService(final byte[] hmacKey) {
+    public RSAService() {
         final var encriptionPair = generateKeys(CIPHER_ALGORITHM);
         this.privateEncriptionKey = encriptionPair.getPrivate();
         this.publicEncriptionKey = encriptionPair.getPublic();
@@ -47,10 +46,6 @@ public class RSAService implements AsymmetricCryptoService {
         final var hmacPair = generateKeys(HMAC_ALGORITHM);
         this.privateHmacKey = hmacPair.getPrivate();
         this.publicHmacKey = hmacPair.getPublic();
-    }
-
-    public RSAService(final String hmacKey) {
-        this(Base64.getDecoder().decode(hmacKey));
     }
 
     @Override

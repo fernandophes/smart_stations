@@ -18,12 +18,8 @@ public abstract class CryptoServiceFactory {
         return new AESService(encryptionKey, hmacKey);
     }
 
-    public static AsymmetricCryptoService rsa(final byte[] hmacKey) {
-        return new RSAService(hmacKey);
-    }
-
-    public static AsymmetricCryptoService rsa(final String hmacKey) {
-        return new RSAService(hmacKey);
+    public static AsymmetricCryptoService rsa() {
+        return new RSAService();
     }
 
 }
