@@ -1,9 +1,11 @@
 package br.edu.ufersa.cc.seg.common.utils;
 
-public enum ServerType {
+public enum InstanceType {
 
     AUTH,
+    DEVICE,
     EDGE,
-    DATACENTER;
+    DATACENTER,
+    CLIENT;
 
 }
