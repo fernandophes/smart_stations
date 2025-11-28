@@ -5,4 +5,5 @@ module edge_server {
 
     requires lombok;
     requires org.slf4j;
+    requires com.auth0.jwt;
 }

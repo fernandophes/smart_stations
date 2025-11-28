@@ -3,6 +3,7 @@ package br.edu.ufersa.cc.seg.edge;
 import java.io.IOException;
 import java.net.InetAddress;
 
+import br.edu.ufersa.cc.seg.common.auth.TokenService;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
@@ -13,8 +14,10 @@ import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
+import br.edu.ufersa.cc.seg.common.utils.InstanceType;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
+import br.edu.ufersa.cc.seg.common.utils.TokenHandler;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,6 +26,7 @@ public class EdgeServer {
 
     private static final long INTERVAL = 3_000;
 
+    private final TokenService tokenService;
     private final CryptoService cryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
@@ -35,6 +39,9 @@ public class EdgeServer {
         this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
         this.serverMessenger = ServerMessengerFactory.secureUdp(cryptoService);
+
+        final var jwtSecret = envOrInputFactory.getString("JWT_SECRET");
+        this.tokenService = new TokenService(jwtSecret);
     }
 
     public void start() {
@@ -103,10 +110,11 @@ public class EdgeServer {
     private Message handleRequest(final Message request) {
         log.info("Leitura recebida: {}", request.getValues());
 
-        request.setType(MessageType.STORE_SNAPSHOT);
-        datacenterMessenger.send(request);
-
-        return MessageFactory.ok();
+        return TokenHandler.handle(tokenService, request, InstanceType.DEVICE, (identifier, rqst) -> {
+            request.setType(MessageType.STORE_SNAPSHOT);
+            datacenterMessenger.send(request);
+            return MessageFactory.ok();
+        });
     }
 
 }
