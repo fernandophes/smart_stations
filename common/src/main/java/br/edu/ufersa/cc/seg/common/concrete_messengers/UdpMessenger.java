@@ -41,7 +41,7 @@ public class UdpMessenger extends Messenger {
     @Override
     @SneakyThrows
     public Message receive() {
-        final var bytes = new byte[1024];
+        final var bytes = new byte[2048];
         final var packet = new DatagramPacket(bytes, bytes.length);
         socket.receive(packet);
 

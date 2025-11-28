@@ -14,6 +14,7 @@ public enum MessageType {
     SEND_SNAPSHOT,
     STORE_SNAPSHOT,
     AUTHENTICATE,
+    USE_SYMMETRIC,
 
     /*
      * Responses

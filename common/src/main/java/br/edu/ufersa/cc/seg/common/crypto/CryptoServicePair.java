@@ -9,7 +9,6 @@ public class CryptoServicePair {
 
     private final CryptoService publicSide;
     private final CryptoService privateSide;
-    private final PublicKey publicEncryptionKey;
-    private final PublicKey publicHmacKey;
+    private final PublicKey publicKey;
 
 }

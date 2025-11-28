@@ -19,7 +19,7 @@ public class Main {
 
         final var factory = new EnvOrInputFactory(new Scanner(input));
         final var name = factory.getString("DEVICE_NAME");
-        final var device = new Device(name, factory.aesService(), factory);
+        final var device = new Device(name, factory);
 
         device.start();
         factory.close();

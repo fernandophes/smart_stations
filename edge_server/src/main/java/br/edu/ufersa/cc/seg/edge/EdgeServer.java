@@ -2,9 +2,11 @@ package br.edu.ufersa.cc.seg.edge;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.security.PublicKey;
 
 import br.edu.ufersa.cc.seg.common.auth.TokenService;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
+import br.edu.ufersa.cc.seg.common.factories.CryptoServiceFactory;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
@@ -26,9 +28,12 @@ public class EdgeServer {
 
     private static final long INTERVAL = 3_000;
 
+    private final CryptoService asymmetricCryptoService;
     private final TokenService tokenService;
-    private final CryptoService cryptoService;
+    private final CryptoService oldCryptoService;
     private final EnvOrInputFactory envOrInputFactory;
+
+    private final PublicKey publicEncryptionKey;
 
     private final ServerMessenger serverMessenger;
     private SecureMessenger datacenterMessenger;
@@ -36,9 +41,14 @@ public class EdgeServer {
 
     public EdgeServer(final CryptoService cryptoService, final EnvOrInputFactory envOrInputFactory)
             throws IOException {
-        this.cryptoService = cryptoService;
+        this.oldCryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
-        this.serverMessenger = ServerMessengerFactory.secureUdp(cryptoService);
+
+        final var rsaPair = CryptoServiceFactory.rsaPair();
+        this.publicEncryptionKey = rsaPair.getPublicKey();
+
+        this.asymmetricCryptoService = rsaPair.getPrivateSide();
+        this.serverMessenger = ServerMessengerFactory.secureUdp(asymmetricCryptoService);
 
         final var jwtSecret = envOrInputFactory.getString("JWT_SECRET");
         this.tokenService = new TokenService(jwtSecret);
@@ -48,7 +58,7 @@ public class EdgeServer {
         connectToLocationServer();
         register();
         locateDatacenterServer();
-        serverMessenger.subscribe(this::handleRequest);
+        serverMessenger.subscribe(this::useSymmetric);
     }
 
     @SneakyThrows
@@ -72,7 +82,8 @@ public class EdgeServer {
         final var request = new Message(MessageType.REGISTER_SERVER)
                 .withValue(Fields.SERVER_TYPE, ServerType.EDGE)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
-                .withValue(Fields.PORT, serverMessenger.getPort());
+                .withValue(Fields.PORT, serverMessenger.getPort())
+                .withValue(Fields.PUBLIC_KEY, publicEncryptionKey.getEncoded());
 
         locationMessenger.send(request);
 
@@ -98,13 +109,34 @@ public class EdgeServer {
                 final var host = (String) response.getValues().get(Fields.HOST);
                 final var port = (int) response.getValues().get(Fields.PORT);
 
-                datacenterMessenger = MessengerFactory.secureTcp(host, port, cryptoService);
+                datacenterMessenger = MessengerFactory.secureTcp(host, port, oldCryptoService);
             }
 
             if (datacenterMessenger == null) {
                 Thread.sleep(INTERVAL);
             }
         } while (datacenterMessenger == null);
+    }
+
+    private Message useSymmetric(final Message request) {
+        if (MessageType.USE_SYMMETRIC.equals(request.getType())) {
+            log.info("Nova conexão assimétrica. Preparando-se para usar simétrica.");
+
+            final var encryptionKey = CryptoServiceFactory.generateAESKey();
+            final var hmacKey = CryptoServiceFactory.generateAESKey();
+
+            final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+            final var symmetricMessenger = ServerMessengerFactory.secureUdp(cryptoService);
+            symmetricMessenger.subscribe(this::handleRequest);
+            log.info("Aguardando mensagens simétricas...");
+
+            return MessageFactory.ok()
+                    .withValue(Fields.PORT, symmetricMessenger.getPort())
+                    .withValue("ENCRYPTION_KEY", encryptionKey.getEncoded())
+                    .withValue("HMAC_KEY", hmacKey.getEncoded());
+        } else {
+            return MessageFactory.error("Tipo de mensagem não suportada");
+        }
     }
 
     private Message handleRequest(final Message request) {
