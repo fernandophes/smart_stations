@@ -12,7 +12,6 @@ import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -50,12 +49,6 @@ public class TcpServerMessenger implements ServerMessenger {
         private SecureTcpMessenger accept() {
             return new SecureTcpMessenger(socket, cryptoService);
         }
-    }
-
-    @Value
-    public static class ClientRegistration {
-        SecureTcpMessenger messenger;
-        Message firstMessage;
     }
 
     private final ServerSocket socket;
