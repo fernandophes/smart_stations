@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
  * simétrica) e integridade/autenticidade (HMAC) das mensagens.
  */
 @Slf4j
-public class CryptoService {
+public class AESService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -31,12 +31,12 @@ public class CryptoService {
     private final SecretKey encryptionKey;
     private final SecretKey hmacKey;
 
-    public CryptoService(final byte[] encryptionKey, final byte[] hmacKey) {
+    public AESService(final byte[] encryptionKey, final byte[] hmacKey) {
         this.encryptionKey = new SecretKeySpec(encryptionKey, "AES");
         this.hmacKey = new SecretKeySpec(hmacKey, HMAC_ALGORITHM);
     }
 
-    public CryptoService(final String encryptionKey, final String hmacKey) {
+    public AESService(final String encryptionKey, final String hmacKey) {
         this(Base64.getDecoder().decode(encryptionKey), Base64.getDecoder().decode(hmacKey));
     }
 

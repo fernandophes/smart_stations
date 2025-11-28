@@ -7,7 +7,7 @@ import java.net.DatagramSocket;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
-import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
+import br.edu.ufersa.cc.seg.common.crypto.AESService;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import lombok.AccessLevel;
@@ -66,17 +66,17 @@ public class SecureUdpServerMessenger implements ServerMessenger {
     }
 
     private final DatagramSocket socket;
-    private final CryptoService cryptoService;
+    private final AESService cryptoService;
 
-    public SecureUdpServerMessenger(final CryptoService cryptoService) throws IOException {
+    public SecureUdpServerMessenger(final AESService cryptoService) throws IOException {
         this(new DatagramSocket(), cryptoService);
     }
 
-    public SecureUdpServerMessenger(final int port, final CryptoService cryptoService) throws IOException {
+    public SecureUdpServerMessenger(final int port, final AESService cryptoService) throws IOException {
         this(new DatagramSocket(port), cryptoService);
     }
 
-    private SecureUdpServerMessenger(final DatagramSocket socket, final CryptoService cryptoService) {
+    private SecureUdpServerMessenger(final DatagramSocket socket, final AESService cryptoService) {
         this.socket = socket;
         this.cryptoService = cryptoService;
     }

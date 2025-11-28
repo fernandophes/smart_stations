@@ -4,7 +4,7 @@ import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureTcpServerMessenger;
 import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureUdpServerMessenger;
 import br.edu.ufersa.cc.seg.common.concrete_messengers.TcpServerMessenger;
 import br.edu.ufersa.cc.seg.common.concrete_messengers.UdpServerMessenger;
-import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
+import br.edu.ufersa.cc.seg.common.crypto.AESService;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -34,22 +34,22 @@ public abstract class ServerMessengerFactory {
     }
 
     @SneakyThrows
-    public static ServerMessenger secureTcp(final CryptoService cryptoService) {
+    public static ServerMessenger secureTcp(final AESService cryptoService) {
         return new SecureTcpServerMessenger(cryptoService);
     }
 
     @SneakyThrows
-    public static ServerMessenger secureTcp(final int port, final CryptoService cryptoService) {
+    public static ServerMessenger secureTcp(final int port, final AESService cryptoService) {
         return new SecureTcpServerMessenger(port, cryptoService);
     }
 
     @SneakyThrows
-    public static ServerMessenger secureUdp(final CryptoService cryptoService) {
+    public static ServerMessenger secureUdp(final AESService cryptoService) {
         return new SecureUdpServerMessenger(cryptoService);
     }
 
     @SneakyThrows
-    public static ServerMessenger secureUdp(final int port, final CryptoService cryptoService) {
+    public static ServerMessenger secureUdp(final int port, final AESService cryptoService) {
         return new SecureUdpServerMessenger(port, cryptoService);
     }
 

@@ -3,7 +3,7 @@ package br.edu.ufersa.cc.seg.edge;
 import java.io.IOException;
 import java.net.InetAddress;
 
-import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
+import br.edu.ufersa.cc.seg.common.crypto.AESService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
@@ -23,14 +23,14 @@ public class EdgeServer {
 
     private static final long INTERVAL = 3_000;
 
-    private final CryptoService cryptoService;
+    private final AESService cryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
     private final ServerMessenger serverMessenger;
     private SecureMessenger datacenterMessenger;
     private Messenger locationMessenger;
 
-    public EdgeServer(final CryptoService cryptoService, final EnvOrInputFactory envOrInputFactory)
+    public EdgeServer(final AESService cryptoService, final EnvOrInputFactory envOrInputFactory)
             throws IOException {
         this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;

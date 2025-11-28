@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
-import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
+import br.edu.ufersa.cc.seg.common.crypto.AESService;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Datacenter {
 
-    private final CryptoService cryptoService;
+    private final AESService cryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
     private final Javalin httpServer;
@@ -40,7 +40,7 @@ public class Datacenter {
      */
     private final SnapshotService snapshotService = new SnapshotService();
 
-    public Datacenter(final CryptoService cryptoService, final EnvOrInputFactory envOrInputFactory)
+    public Datacenter(final AESService cryptoService, final EnvOrInputFactory envOrInputFactory)
             throws IOException {
         this.cryptoService = cryptoService;
         this.envOrInputFactory = envOrInputFactory;
