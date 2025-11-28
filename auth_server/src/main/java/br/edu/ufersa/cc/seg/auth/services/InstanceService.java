@@ -3,7 +3,7 @@ package br.edu.ufersa.cc.seg.auth.services;
 import java.util.List;
 import java.util.Optional;
 
-import br.edu.ufersa.cc.seg.auth.InstanceDto;
+import br.edu.ufersa.cc.seg.auth.dto.InstanceDto;
 import br.edu.ufersa.cc.seg.auth.entities.Instance;
 import br.edu.ufersa.cc.seg.auth.repositories.InstanceRepository;
 import lombok.NoArgsConstructor;

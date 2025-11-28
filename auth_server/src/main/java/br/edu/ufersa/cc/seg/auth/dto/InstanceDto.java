@@ -1,4 +1,4 @@
-package br.edu.ufersa.cc.seg.auth;
+package br.edu.ufersa.cc.seg.auth.dto;
 
 import java.util.UUID;
 
