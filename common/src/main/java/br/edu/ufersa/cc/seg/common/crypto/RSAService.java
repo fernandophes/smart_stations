@@ -6,6 +6,7 @@ import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.util.Base64;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -37,6 +38,10 @@ public class RSAService implements CryptoService {
         this.privateKey = pair.getPrivate();
         this.publicKey = pair.getPublic();
         this.hmacKey = new SecretKeySpec(hmacKey, HMAC_ALGORITHM);
+    }
+
+    public RSAService(final String hmacKey) {
+        this(Base64.getDecoder().decode(hmacKey));
     }
 
     @Override
