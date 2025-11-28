@@ -30,8 +30,8 @@ public class UdpMessenger extends Messenger {
     @Override
     @SneakyThrows
     public void send(final Message message) {
-        final var secureMsg = cryptoService.encrypt(message.toBytes()).toBytes();
-        final var packet = new DatagramPacket(secureMsg, secureMsg.length, destinationHost, destinationPort);
+        final var secureMessage = cryptoService.encrypt(message.toBytes()).toBytes();
+        final var packet = new DatagramPacket(secureMessage, secureMessage.length, destinationHost, destinationPort);
 
         log.info("Enviando mensagem do tipo {} para {}:{}", message.getType(), destinationHost, destinationPort);
         socket.send(packet);
@@ -48,8 +48,8 @@ public class UdpMessenger extends Messenger {
     }
 
     public Message receive(final DatagramPacket packet) {
-        final var secureMsg = SecureMessage.fromBytes(packet.getData());
-        final var messageAsBytes = cryptoService.decrypt(secureMsg);
+        final var secureMessage = SecureMessage.fromBytes(packet.getData());
+        final var messageAsBytes = cryptoService.decrypt(secureMessage);
         final var message = Message.fromBytes(messageAsBytes);
 
         log.info("Recebida mensagem do tipo {} de {}:{}", message.getType(), packet.getAddress().getHostName(),

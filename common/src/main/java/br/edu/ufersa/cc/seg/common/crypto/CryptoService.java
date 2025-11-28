@@ -63,7 +63,7 @@ public class CryptoService {
             final var hmac = generateHmac(encrypted, iv, timestamp);
 
             // Retorna mensagem segura
-            final var securityMessage = SecureMessage.builder()
+            final var secureMessage = SecureMessage.builder()
                     .encryptedContent(encrypted)
                     .hmac(hmac)
                     .iv(iv)
@@ -71,9 +71,9 @@ public class CryptoService {
                     .build();
 
             final var writer = new ObjectMapper().writerWithDefaultPrettyPrinter();
-            log.debug("Mensagem criptografada:\n{}", writer.writeValueAsString(securityMessage));
+            log.debug("Mensagem criptografada:\n{}", writer.writeValueAsString(secureMessage));
 
-            return securityMessage;
+            return secureMessage;
         } catch (final Exception e) {
             log.error("Erro ao cifrar mensagem", e);
             throw new CryptoException("Erro de criptografia", e);
@@ -85,27 +85,27 @@ public class CryptoService {
      * integridade/autenticidade
      */
     @SneakyThrows
-    public byte[] decrypt(final SecureMessage secureMsg) {
+    public byte[] decrypt(final SecureMessage secureMessage) {
         final var writer = new ObjectMapper().writerWithDefaultPrettyPrinter();
-        log.debug("Descriptografando mensagem...\n{}", writer.writeValueAsString(secureMsg));
+        log.debug("Descriptografando mensagem...\n{}", writer.writeValueAsString(secureMessage));
 
         try {
             // Valida HMAC primeiro
             final var expectedHmac = generateHmac(
-                    secureMsg.getEncryptedContent(),
-                    secureMsg.getIv(),
-                    secureMsg.getTimestamp());
+                    secureMessage.getEncryptedContent(),
+                    secureMessage.getIv(),
+                    secureMessage.getTimestamp());
 
-            if (!MessageDigest.isEqual(expectedHmac, secureMsg.getHmac())) {
+            if (!MessageDigest.isEqual(expectedHmac, secureMessage.getHmac())) {
                 throw new CryptoException("HMAC inválido - mensagem pode ter sido adulterada");
             }
 
             // Se HMAC ok, decifra
             final var cipher = Cipher.getInstance(CIPHER_ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, encryptionKey,
-                    new IvParameterSpec(secureMsg.getIv()));
+                    new IvParameterSpec(secureMessage.getIv()));
 
-            final var original = cipher.doFinal(secureMsg.getEncryptedContent());
+            final var original = cipher.doFinal(secureMessage.getEncryptedContent());
             log.debug("Mensagem descriptografada:\n{}", new String(original));
 
             return original;

@@ -41,16 +41,16 @@ public class TcpMessenger extends Messenger {
     @Override
     @SneakyThrows
     public void send(final Message message) {
-        final var secureMsg = cryptoService.encrypt(message.toBytes());
-        out.writeObject(secureMsg);
+        final var secureMessage = cryptoService.encrypt(message.toBytes());
+        out.writeObject(secureMessage);
         out.flush();
     }
 
     @Override
     @SneakyThrows
     public Message receive() {
-        final var secureMsg = (SecureMessage) in.readObject();
-        final var messageAsBytes = cryptoService.decrypt(secureMsg);
+        final var secureMessage = (SecureMessage) in.readObject();
+        final var messageAsBytes = cryptoService.decrypt(secureMessage);
 
         return Message.fromBytes(messageAsBytes);
     }
