@@ -16,7 +16,7 @@ public class TokenService {
 
     public String generateToken(final String identifier) {
         return JWT.create()
-                .withIssuer("scale-flow")
+                .withIssuer("smart-stations")
                 .withSubject(identifier)
                 .withExpiresAt(generateExpirationDate())
                 .sign(Algorithm.HMAC256(secret));
@@ -24,7 +24,7 @@ public class TokenService {
 
     public String validateToken(final String token) {
         return JWT.require(Algorithm.HMAC256(secret))
-                .withIssuer("scale-flow")
+                .withIssuer("smart-stations")
                 .build()
                 .verify(token)
                 .getSubject();
