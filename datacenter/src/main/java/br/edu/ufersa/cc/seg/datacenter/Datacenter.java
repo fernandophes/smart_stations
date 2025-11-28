@@ -67,7 +67,7 @@ public class Datacenter {
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
-        locationMessenger = MessengerFactory.udp(locationHost, locationPort, cryptoService);
+        locationMessenger = MessengerFactory.secureUdp(locationHost, locationPort, cryptoService);
     }
 
     @SneakyThrows

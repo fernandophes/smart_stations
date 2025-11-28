@@ -55,7 +55,7 @@ public class EdgeServer {
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
-        locationMessenger = MessengerFactory.udp(locationHost, locationPort, cryptoService);
+        locationMessenger = MessengerFactory.secureUdp(locationHost, locationPort, cryptoService);
     }
 
     @SneakyThrows
@@ -90,7 +90,7 @@ public class EdgeServer {
                 final var host = (String) response.getValues().get(Fields.HOST);
                 final var port = (int) response.getValues().get(Fields.PORT);
 
-                datacenterMessenger = MessengerFactory.tcp(host, port, cryptoService);
+                datacenterMessenger = MessengerFactory.secureTcp(host, port, cryptoService);
             }
 
             if (datacenterMessenger == null) {

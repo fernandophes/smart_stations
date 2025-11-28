@@ -64,7 +64,7 @@ public class Device {
         final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
         final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
 
-        locationMessenger = MessengerFactory.udp(locationHost, locationPort, cryptoService);
+        locationMessenger = MessengerFactory.secureUdp(locationHost, locationPort, cryptoService);
     }
 
     @SneakyThrows
@@ -80,7 +80,7 @@ public class Device {
                 final var host = (String) response.getValues().get(Fields.HOST);
                 final var port = (int) response.getValues().get(Fields.PORT);
 
-                edgeMessenger = MessengerFactory.udp(host, port, cryptoService);
+                edgeMessenger = MessengerFactory.secureUdp(host, port, cryptoService);
             }
 
             if (edgeMessenger == null) {

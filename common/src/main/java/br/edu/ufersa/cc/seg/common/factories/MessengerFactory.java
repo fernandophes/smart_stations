@@ -22,41 +22,41 @@ public abstract class MessengerFactory {
         private final int port;
     }
 
-    private static final Map<MessengerInfo, SecureTcpMessenger> TCP_MESSENGERS = new HashMap<>();
-    private static final Map<MessengerInfo, SecureUdpMessenger> UDP_MESSENGERS = new HashMap<>();
+    private static final Map<MessengerInfo, SecureTcpMessenger> SECURE_TCP_MESSENGERS = new HashMap<>();
+    private static final Map<MessengerInfo, SecureUdpMessenger> SECURE_UDP_MESSENGERS = new HashMap<>();
 
-    public static SecureMessenger tcp(final String host, final int port, final CryptoService cryptoService) {
+    public static SecureMessenger secureTcp(final String host, final int port, final CryptoService cryptoService) {
         final var info = new MessengerInfo(host, port);
 
-        return Optional.ofNullable(TCP_MESSENGERS.get(info))
+        return Optional.ofNullable(SECURE_TCP_MESSENGERS.get(info))
                 .orElseGet(() -> {
-                    final var messenger = createTcpMessenger(host, port, cryptoService);
-                    TCP_MESSENGERS.put(info, messenger);
+                    final var messenger = createSecureTcpMessenger(host, port, cryptoService);
+                    SECURE_TCP_MESSENGERS.put(info, messenger);
 
                     return messenger;
                 });
     }
 
-    public static SecureMessenger udp(final String host, final int port, final CryptoService cryptoService) {
+    public static SecureMessenger secureUdp(final String host, final int port, final CryptoService cryptoService) {
         final var info = new MessengerInfo(host, port);
 
-        return Optional.ofNullable(UDP_MESSENGERS.get(info))
+        return Optional.ofNullable(SECURE_UDP_MESSENGERS.get(info))
                 .orElseGet(() -> {
-                    final var messenger = createUdpMessenger(host, port, cryptoService);
-                    UDP_MESSENGERS.put(info, messenger);
+                    final var messenger = createSecureUdpMessenger(host, port, cryptoService);
+                    SECURE_UDP_MESSENGERS.put(info, messenger);
 
                     return messenger;
                 });
     }
 
     @SneakyThrows
-    private static SecureTcpMessenger createTcpMessenger(final String host, final int port,
+    private static SecureTcpMessenger createSecureTcpMessenger(final String host, final int port,
             final CryptoService cryptoService) {
         return new SecureTcpMessenger(host, port, cryptoService);
     }
 
     @SneakyThrows
-    private static SecureUdpMessenger createUdpMessenger(final String host, final int port,
+    private static SecureUdpMessenger createSecureUdpMessenger(final String host, final int port,
             final CryptoService cryptoService) {
         return new SecureUdpMessenger(host, port, cryptoService);
     }
