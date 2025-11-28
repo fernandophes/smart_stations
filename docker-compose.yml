@@ -24,6 +24,8 @@ services:
       - .env
     environment:
       - LOCATION_HOST=location-server
+    ports:
+      - "8480:8480"
     depends_on:
       - location-server
     networks:
