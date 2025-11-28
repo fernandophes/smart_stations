@@ -22,18 +22,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CryptoService {
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
     private static final String HMAC_ALGORITHM = "HmacSHA256";
     private static final int IV_SIZE = 16;
 
     private final SecretKey encryptionKey;
     private final SecretKey hmacKey;
-    private final SecureRandom secureRandom;
 
     public CryptoService(final byte[] encryptionKey, final byte[] hmacKey) {
         this.encryptionKey = new SecretKeySpec(encryptionKey, "AES");
         this.hmacKey = new SecretKeySpec(hmacKey, HMAC_ALGORITHM);
-        this.secureRandom = new SecureRandom();
     }
 
     public CryptoService(final String encryptionKey, final String hmacKey) {
@@ -50,7 +50,7 @@ public class CryptoService {
         try {
             // Gerar IV aleatório
             final var iv = new byte[IV_SIZE];
-            secureRandom.nextBytes(iv);
+            SECURE_RANDOM.nextBytes(iv);
             final var ivSpec = new IvParameterSpec(iv);
 
             // Cifrar a mensagem
