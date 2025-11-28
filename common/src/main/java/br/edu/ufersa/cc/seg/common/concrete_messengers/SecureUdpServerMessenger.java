@@ -17,7 +17,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class UdpServerMessenger implements ServerMessenger {
+public class SecureUdpServerMessenger implements ServerMessenger {
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public class Subscription implements Closeable {
@@ -68,15 +68,15 @@ public class UdpServerMessenger implements ServerMessenger {
     private final DatagramSocket socket;
     private final CryptoService cryptoService;
 
-    public UdpServerMessenger(final CryptoService cryptoService) throws IOException {
+    public SecureUdpServerMessenger(final CryptoService cryptoService) throws IOException {
         this(new DatagramSocket(), cryptoService);
     }
 
-    public UdpServerMessenger(final int port, final CryptoService cryptoService) throws IOException {
+    public SecureUdpServerMessenger(final int port, final CryptoService cryptoService) throws IOException {
         this(new DatagramSocket(port), cryptoService);
     }
 
-    private UdpServerMessenger(final DatagramSocket socket, final CryptoService cryptoService) {
+    private SecureUdpServerMessenger(final DatagramSocket socket, final CryptoService cryptoService) {
         this.socket = socket;
         this.cryptoService = cryptoService;
     }

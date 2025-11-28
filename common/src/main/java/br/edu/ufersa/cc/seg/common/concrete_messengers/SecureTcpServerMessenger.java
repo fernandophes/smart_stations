@@ -15,7 +15,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class TcpServerMessenger implements ServerMessenger {
+public class SecureTcpServerMessenger implements ServerMessenger {
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public class Subscription implements Closeable {
@@ -47,28 +47,28 @@ public class TcpServerMessenger implements ServerMessenger {
 
         @SneakyThrows
         private SecureTcpMessenger accept() {
-            return new SecureTcpMessenger(socket, cryptoService);
+            return new SecureTcpMessenger(serverSocket, cryptoService);
         }
     }
 
-    private final ServerSocket socket;
+    private final ServerSocket serverSocket;
     private final CryptoService cryptoService;
 
-    public TcpServerMessenger(final CryptoService cryptoService) throws IOException {
+    public SecureTcpServerMessenger(final CryptoService cryptoService) throws IOException {
         this(new ServerSocket(0), cryptoService);
     }
 
-    public TcpServerMessenger(final int port, final CryptoService cryptoService) throws IOException {
+    public SecureTcpServerMessenger(final int port, final CryptoService cryptoService) throws IOException {
         this(new ServerSocket(port), cryptoService);
     }
 
-    private TcpServerMessenger(final ServerSocket socket, final CryptoService cryptoService) {
-        this.socket = socket;
+    private SecureTcpServerMessenger(final ServerSocket socket, final CryptoService cryptoService) {
+        this.serverSocket = socket;
         this.cryptoService = cryptoService;
     }
 
     public int getPort() {
-        return socket.getLocalPort();
+        return serverSocket.getLocalPort();
     }
 
     public Subscription subscribe(final Function<Message, Message> callback) {
@@ -79,7 +79,7 @@ public class TcpServerMessenger implements ServerMessenger {
 
     @SneakyThrows
     public void close() {
-        socket.close();
+        serverSocket.close();
     }
 
 }

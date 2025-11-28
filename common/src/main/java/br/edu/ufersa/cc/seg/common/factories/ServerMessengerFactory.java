@@ -1,7 +1,7 @@
 package br.edu.ufersa.cc.seg.common.factories;
 
-import br.edu.ufersa.cc.seg.common.concrete_messengers.TcpServerMessenger;
-import br.edu.ufersa.cc.seg.common.concrete_messengers.UdpServerMessenger;
+import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureTcpServerMessenger;
+import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureUdpServerMessenger;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import lombok.AccessLevel;
@@ -13,22 +13,22 @@ public abstract class ServerMessengerFactory {
 
     @SneakyThrows
     public static ServerMessenger tcp(final CryptoService cryptoService) {
-        return new TcpServerMessenger(cryptoService);
+        return new SecureTcpServerMessenger(cryptoService);
     }
 
     @SneakyThrows
     public static ServerMessenger tcp(final int port, final CryptoService cryptoService) {
-        return new TcpServerMessenger(port, cryptoService);
+        return new SecureTcpServerMessenger(port, cryptoService);
     }
 
     @SneakyThrows
     public static ServerMessenger udp(final CryptoService cryptoService) {
-        return new UdpServerMessenger(cryptoService);
+        return new SecureUdpServerMessenger(cryptoService);
     }
 
     @SneakyThrows
     public static ServerMessenger udp(final int port, final CryptoService cryptoService) {
-        return new UdpServerMessenger(port, cryptoService);
+        return new SecureUdpServerMessenger(port, cryptoService);
     }
 
 }
