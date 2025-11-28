@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
  * simétrica) e integridade/autenticidade (HMAC) das mensagens.
  */
 @Slf4j
-public class AESService {
+public class AESService implements CryptoService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -40,10 +40,7 @@ public class AESService {
         this(Base64.getDecoder().decode(encryptionKey), Base64.getDecoder().decode(hmacKey));
     }
 
-    /**
-     * Cifra uma mensagem e gera o HMAC para garantir confidencialidade e
-     * integridade/autenticidade
-     */
+    @Override
     public SecureMessage encrypt(final byte[] message) {
         log.debug("Criptografando mensagem...\n{}", new String(message));
 
@@ -80,10 +77,7 @@ public class AESService {
         }
     }
 
-    /**
-     * Decifra uma mensagem e valida seu HMAC para garantir
-     * integridade/autenticidade
-     */
+    @Override
     @SneakyThrows
     public byte[] decrypt(final SecureMessage secureMessage) {
         final var writer = new ObjectMapper().writerWithDefaultPrettyPrinter();
@@ -102,9 +96,7 @@ public class AESService {
 
             // Se HMAC ok, decifra
             final var cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            cipher.init(Cipher.DECRYPT_MODE, encryptionKey,
-                    new IvParameterSpec(secureMessage.getIv()));
-
+            cipher.init(Cipher.DECRYPT_MODE, encryptionKey, new IvParameterSpec(secureMessage.getIv()));
             final var original = cipher.doFinal(secureMessage.getEncryptedContent());
             log.debug("Mensagem descriptografada:\n{}", new String(original));
 

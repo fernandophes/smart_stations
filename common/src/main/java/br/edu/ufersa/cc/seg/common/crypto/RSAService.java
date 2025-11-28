@@ -2,49 +2,137 @@ package br.edu.ufersa.cc.seg.common.crypto;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
-public class RSAService {
+@Slf4j
+public class RSAService implements CryptoService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    public static final int KEY_SIZE = 2048;
-    public static final String TRANSFORMATION = "RSA";
+    private static final String CIPHER_ALGORITHM = "RSA";
+    private static final String HMAC_ALGORITHM = "HmacSHA256";
+    private static final int KEY_SIZE = 2048;
+    private static final int IV_SIZE = 16;
 
     private final PublicKey publicKey;
     private final PrivateKey privateKey;
+    private final SecretKey hmacKey;
 
-    public RSAService() {
+    public RSAService(final byte[] hmacKey) {
         final var pair = generateKeys();
         this.privateKey = pair.getPrivate();
         this.publicKey = pair.getPublic();
+        this.hmacKey = new SecretKeySpec(hmacKey, HMAC_ALGORITHM);
     }
 
+    @Override
     @SneakyThrows
-    public byte[] encrypt(final byte[] message) {
-        final var cipher = Cipher.getInstance(TRANSFORMATION);
-        cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-        return cipher.doFinal(message);
+    public SecureMessage encrypt(final byte[] message) {
+        // Gerar IV aleatório
+        final var iv = new byte[IV_SIZE];
+        SECURE_RANDOM.nextBytes(iv);
+        final var ivSpec = new IvParameterSpec(iv);
+
+        // Cifrar a mensagem
+        final var cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+        cipher.init(Cipher.ENCRYPT_MODE, privateKey, ivSpec);
+        final var encrypted = cipher.doFinal(message);
+
+        // Gera HMAC (encrypted + iv + timestamp para evitar replay)
+        final var timestamp = System.currentTimeMillis();
+        final var hmac = generateHmac(encrypted, iv, timestamp);
+
+        // Retorna mensagem segura
+        final var secureMessage = SecureMessage.builder()
+                .encryptedContent(encrypted)
+                .hmac(hmac)
+                .iv(iv)
+                .timestamp(timestamp)
+                .build();
+
+        final var writer = new ObjectMapper().writerWithDefaultPrettyPrinter();
+        log.debug("Mensagem criptografada:\n{}", writer.writeValueAsString(secureMessage));
+
+        return secureMessage;
     }
 
+    @Override
     @SneakyThrows
-    public byte[] decrypt(final byte[] message) {
-        final var cipher = Cipher.getInstance(TRANSFORMATION);
-        cipher.init(Cipher.DECRYPT_MODE, publicKey);
-        return cipher.doFinal(message);
+    public byte[] decrypt(final SecureMessage secureMessage) {
+        final var writer = new ObjectMapper().writerWithDefaultPrettyPrinter();
+        log.debug("Descriptografando mensagem...\n{}", writer.writeValueAsString(secureMessage));
+
+        // Valida HMAC primeiro
+        final var expectedHmac = generateHmac(
+                secureMessage.getEncryptedContent(),
+                secureMessage.getIv(),
+                secureMessage.getTimestamp());
+
+        if (!MessageDigest.isEqual(expectedHmac, secureMessage.getHmac())) {
+            throw new CryptoException("HMAC inválido - mensagem pode ter sido adulterada");
+        }
+
+        // Se HMAC ok, decifra
+        final var cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, publicKey, new IvParameterSpec(secureMessage.getIv()));
+        final var original = cipher.doFinal(secureMessage.getEncryptedContent());
+        log.debug("Mensagem descriptografada:\n{}", new String(original));
+
+        return original;
     }
 
     @SneakyThrows
     private KeyPair generateKeys() {
-        final var generator = KeyPairGenerator.getInstance(TRANSFORMATION);
+        final var generator = KeyPairGenerator.getInstance(CIPHER_ALGORITHM);
         generator.initialize(KEY_SIZE, SECURE_RANDOM);
         return generator.generateKeyPair();
+    }
+
+    /**
+     * Gera HMAC para os componentes da mensagem
+     */
+    private byte[] generateHmac(final byte[] encrypted, final byte[] iv, final long timestamp) {
+        try {
+            final var mac = Mac.getInstance(HMAC_ALGORITHM);
+            mac.init(hmacKey);
+
+            // HMAC(encrypted + iv + timestamp)
+            mac.update(encrypted);
+            mac.update(iv);
+            mac.update(longToBytes(timestamp));
+
+            return mac.doFinal();
+
+        } catch (final Exception e) {
+            log.error("Erro ao gerar HMAC", e);
+            throw new CryptoException("Erro ao gerar HMAC", e);
+        }
+    }
+
+    /**
+     * Converte long para array de bytes
+     */
+    private static byte[] longToBytes(long x) {
+        final var result = new byte[8];
+        for (var i = 7; i >= 0; i--) {
+            result[i] = (byte) (x & 0xFF);
+            x >>= 8;
+        }
+        return result;
     }
 
 }
