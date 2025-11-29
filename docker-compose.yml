@@ -97,6 +97,25 @@ services:
     networks:
       - ss-network
 
+  browser:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: client # <--- Nome exato da pasta do módulo
+    container_name: browser
+    env_file:
+      - .env
+    environment:
+      - CLIENT_NAME=Browser
+      - LOCATION_HOST=location-server
+      - IDENTIFIER=browser-a
+      - SECRET=browser123
+    depends_on:
+      - datacenter
+    networks:
+      - ss-network
+
 networks:
   ss-network:
     driver: bridge
