@@ -63,6 +63,25 @@ services:
     networks:
       - ss-network
 
+  sensor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: device # <--- Nome exato da pasta do módulo
+    container_name: sensor
+    env_file:
+      - .env
+    environment:
+      - DEVICE_NAME=Sensor
+      - LOCATION_HOST=location-server
+      - IDENTIFIER=sensor-a
+      - SECRET=sensor123
+    depends_on:
+      - edge-server
+    networks:
+      - ss-network
+
   poste:
     build:
       context: .
@@ -96,6 +115,44 @@ services:
       - LOCATION_HOST=location-server
       - IDENTIFIER=semaphor-a
       - SECRET=semaphor123
+    depends_on:
+      - edge-server
+    networks:
+      - ss-network
+
+  toten:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: device # <--- Nome exato da pasta do módulo
+    container_name: toten
+    env_file:
+      - .env
+    environment:
+      - DEVICE_NAME=Toten
+      - LOCATION_HOST=location-server
+      - IDENTIFIER=toten-a
+      - SECRET=toten123
+    depends_on:
+      - edge-server
+    networks:
+      - ss-network
+
+  invalid-device:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: device # <--- Nome exato da pasta do módulo
+    container_name: invalid-device
+    env_file:
+      - .env
+    environment:
+      - DEVICE_NAME=Semáforo
+      - LOCATION_HOST=location-server
+      - IDENTIFIER=invalid-device-a
+      - SECRET=invalid-device123
     depends_on:
       - edge-server
     networks:
