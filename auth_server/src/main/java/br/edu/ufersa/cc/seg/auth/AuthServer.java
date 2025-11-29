@@ -103,6 +103,9 @@ public class AuthServer {
         final var semaphor = new InstanceDto().setType(InstanceType.DEVICE).setIdentifier("semaphor-a");
         instanceService.create(semaphor, "semaphor123");
 
+        final var toten = new InstanceDto().setType(InstanceType.DEVICE).setIdentifier("toten-a");
+        instanceService.create(toten, "toten123");
+
         final var browser = new InstanceDto().setType(InstanceType.CLIENT).setIdentifier("browser-a");
         instanceService.create(browser, "browser123");
     }
