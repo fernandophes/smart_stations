@@ -4,6 +4,7 @@ public enum ServerType {
 
     AUTH,
     EDGE,
-    DATACENTER;
+    DATACENTER,
+    HTTP;
 
 }

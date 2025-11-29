@@ -5,6 +5,8 @@ import java.net.InetAddress;
 import java.security.PublicKey;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
@@ -35,6 +37,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Datacenter {
+
+    private final Map<String, CryptoService> clients = new HashMap<>();
 
     private final TokenService tokenService;
     private final CryptoService asymmetricCryptoService;
@@ -72,6 +76,7 @@ public class Datacenter {
         serverMessenger.subscribe(this::serveSymmetric);
         configureHttpServer();
         register();
+        registerHttp();
     }
 
     @SneakyThrows
@@ -109,12 +114,36 @@ public class Datacenter {
         }
     }
 
+    @SneakyThrows
+    private void registerHttp() {
+        log.info("Registrando-se no servidor de localização...");
+        final var request = new Message(MessageType.REGISTER_SERVER)
+                .withValue(Fields.SERVER_TYPE, ServerType.HTTP)
+                .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
+                .withValue(Fields.PORT, httpServer.port())
+                .withValue(Fields.PUBLIC_KEY, publicKey.getEncoded());
+
+        locationMessenger.send(request);
+
+        final var response = locationMessenger.receive();
+
+        if (response.getType().equals(MessageType.ERROR)) {
+            log.error("Erro ao registrar datacenter: {}", response.getValues());
+        } else {
+            log.info("Registrado no servidor de localização: {}");
+        }
+    }
+
     private void configureHttpServer() {
         httpServer
                 .get("/api/snapshots", ctx -> {
                     log.info("Requisição HTTP recebida");
                     handleToken(tokenService, ctx, InstanceType.CLIENT,
-                            (identifier, context) -> context.json(snapshotService.listAll()));
+                            (identifier, context) -> {
+                                final var message = MessageFactory.ok("data", snapshotService.listAll());
+                                final var encMessage = clients.get(identifier).encrypt(message.toBytes());
+                                context.json(encMessage);
+                            });
                 })
                 .get("/api/snapshots/{starting}", ctx -> {
                     log.info("Requisição HTTP recebida");
@@ -122,10 +151,28 @@ public class Datacenter {
                         final var formattedTimestamp = context.pathParam("starting");
                         final var timestamp = LocalDateTime.parse(formattedTimestamp,
                                 DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                        context.json(snapshotService.listAllAfter(timestamp));
+                        final var message = MessageFactory.ok("data", snapshotService.listAllAfter(timestamp));
+                        final var encMessage = clients.get(identifier).encrypt(message.toBytes());
+                        context.json(encMessage);
                     });
                 })
-                .start(8480);
+                .get("api/use-symmetric", ctx -> {
+                    log.info("Novo cliente");
+                    handleToken(tokenService, ctx, InstanceType.CLIENT, (identifier, context) -> {
+                        final var encryptionKey = CryptoServiceFactory.generateAESKey();
+                        final var hmacKey = CryptoServiceFactory.generateAESKey();
+
+                        final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+                        clients.put(identifier, cryptoService);
+
+                        final var response = MessageFactory.ok()
+                                .withValue("ENCRYPTION_KEY", encryptionKey.getEncoded())
+                                .withValue("HMAC_KEY", hmacKey.getEncoded());
+                        final var asymmetricEncryptedResponse = asymmetricCryptoService.encrypt(response.toBytes());
+                        context.json(asymmetricEncryptedResponse);
+                    });
+                })
+                .start(0);
 
         log.info("Servidor HTTP iniciado na porta {}", httpServer.port());
     }
@@ -173,7 +220,11 @@ public class Datacenter {
                     }
                 })
                 .ifPresentOrElse(identifier -> callback.accept(identifier, context),
-                        () -> context.status(401).result("Token inválido"));
+                        () -> {
+                            final var response = MessageFactory.error("Token invalido");
+                            final var encResponse = asymmetricCryptoService.encrypt(response.toBytes());
+                            context.status(401).json(encResponse);
+                        });
     }
 
     private void storeSnapshot(final Message request) {

@@ -1,0 +1,31 @@
+package br.edu.ufersa.cc.seg.client;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClients;
+
+import lombok.SneakyThrows;
+
+public class MyHttpClient {
+
+    private final HttpClient httpClient = HttpClients.createDefault();
+    private final String uri;
+
+    public MyHttpClient(String host, int port) {
+        this.uri = "http://" + host + ":" + port;
+    }
+
+    @SneakyThrows
+    public HttpResponse useSymmetric(final String token) {
+        final var request = new HttpGet(uri + "/api/use-symmetric");
+        return httpClient.execute(request);
+    }
+
+    @SneakyThrows
+    public HttpResponse getSnapshotsAfter(final String token, final String timestamp) {
+        final var request = new HttpGet(uri + "/api/snapshots/" + timestamp);
+        return httpClient.execute(request);
+    }
+
+}
