@@ -5,6 +5,7 @@ module client {
 
     requires lombok;
     requires org.slf4j;
+    requires com.fasterxml.jackson.databind;
     requires org.apache.httpcomponents.httpcore;
     requires org.apache.httpcomponents.httpclient;
 }

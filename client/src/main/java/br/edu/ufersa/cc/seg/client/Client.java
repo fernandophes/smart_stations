@@ -3,20 +3,25 @@ package br.edu.ufersa.cc.seg.client;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import org.apache.http.util.EntityUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
+import br.edu.ufersa.cc.seg.common.crypto.HybridCryptoException;
 import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
+import br.edu.ufersa.cc.seg.common.dto.SnapshotDto;
 import br.edu.ufersa.cc.seg.common.factories.CryptoServiceFactory;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
+import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
@@ -30,6 +35,7 @@ public class Client {
 
     private static final long INTERVAL = 3_000;
     private static final Timer TIMER = new Timer();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final String name;
     private final EnvOrInputFactory envOrInputFactory;
@@ -50,21 +56,23 @@ public class Client {
 
         subscription = new TimerTask() {
             @Override
+            @SuppressWarnings("unchecked")
             public void run() {
                 final var time3SecondsAgo = LocalDateTime.now().minusSeconds(INTERVAL / 1000)
-                        .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                        .format(Constants.DATE_TIME_URL_FORMATTER);
                 final var response = myClient.getSnapshotsAfter(token, time3SecondsAgo);
 
                 try {
                     final var entity = response.getEntity();
-                    final var json = EntityUtils.toString(entity);
-                    final var secureMessage = SecureMessage.fromJson(json);
+                    final var secureJson = EntityUtils.toString(entity);
+                    final var secureMessage = SecureMessage.fromJson(secureJson);
 
                     final var messageAsBytes = symmetricCryptoService.decrypt(secureMessage);
                     final var message = Message.fromBytes(messageAsBytes);
-                    final var data = message.getValues().get("data");
+                    final var data = (List<SnapshotDto>) message.getValues().get("data");
+                    final var json = MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(data);
 
-                    log.info("Leituras feitas: {}", data);
+                    log.info("Leituras feitas: {}", json);
                 } catch (IOException e) {
                     // Ignorar
                 }
@@ -72,6 +80,15 @@ public class Client {
         };
 
         TIMER.schedule(subscription, Date.from(Instant.now()), INTERVAL);
+    }
+
+    @SneakyThrows
+    public void stop() {
+        if (subscription != null) {
+            subscription.cancel();
+        }
+        locationMessenger.close();
+        authMessenger.close();
     }
 
     @SneakyThrows
@@ -157,7 +174,7 @@ public class Client {
 
             symmetricCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
         } else {
-            throw new RuntimeException((String) message.getValues().get("message"));
+            throw new HybridCryptoException((String) message.getValues().get("message"));
         }
 
     }

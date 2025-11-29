@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.PublicKey;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -150,7 +149,7 @@ public class Datacenter {
                     handleToken(tokenService, ctx, InstanceType.CLIENT, (identifier, context) -> {
                         final var formattedTimestamp = context.pathParam("starting");
                         final var timestamp = LocalDateTime.parse(formattedTimestamp,
-                                DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                                Constants.DATE_TIME_URL_FORMATTER);
                         final var message = MessageFactory.ok("data", snapshotService.listAllAfter(timestamp));
                         final var encMessage = clients.get(identifier).encrypt(message.toBytes());
                         context.json(encMessage);
