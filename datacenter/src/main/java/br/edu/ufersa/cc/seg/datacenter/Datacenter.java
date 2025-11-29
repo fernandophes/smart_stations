@@ -210,10 +210,10 @@ public class Datacenter {
 
     private void handleToken(final TokenService tokenService, final Context context, final InstanceType instanceType,
             final BiConsumer<String, Context> callback) {
-        Optional.ofNullable((String) context.header("token"))
-                .flatMap(token -> {
+        Optional.ofNullable(context.header("token"))
+                .flatMap(tkn -> {
                     try {
-                        final var identifier = tokenService.validateToken(token, instanceType);
+                        final var identifier = tokenService.validateToken(tkn, instanceType);
                         return Optional.of(identifier);
                     } catch (final JWTVerificationException e) {
                         return Optional.empty();

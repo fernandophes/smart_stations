@@ -8,7 +8,6 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.apache.http.ParseException;
 import org.apache.http.util.EntityUtils;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
@@ -18,7 +17,6 @@ import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
-import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
@@ -68,6 +66,7 @@ public class Client {
 
                     log.info("Leituras feitas: {}", data);
                 } catch (IOException e) {
+                    // Ignorar
                 }
             }
         };

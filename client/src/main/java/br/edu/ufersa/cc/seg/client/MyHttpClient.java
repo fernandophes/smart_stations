@@ -19,12 +19,14 @@ public class MyHttpClient {
     @SneakyThrows
     public HttpResponse useSymmetric(final String token) {
         final var request = new HttpGet(uri + "/api/use-symmetric");
+        request.addHeader("token", token);
         return httpClient.execute(request);
     }
 
     @SneakyThrows
     public HttpResponse getSnapshotsAfter(final String token, final String timestamp) {
         final var request = new HttpGet(uri + "/api/snapshots/" + timestamp);
+        request.addHeader("token", token);
         return httpClient.execute(request);
     }
 
