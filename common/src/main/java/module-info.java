@@ -9,6 +9,8 @@ module common {
     opens br.edu.ufersa.cc.seg.common.messengers to com.fasterxml.jackson.databind;
     opens br.edu.ufersa.cc.seg.common.utils to com.fasterxml.jackson.databind;
 
+    requires transitive io.javalin;
+
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.core;
     requires com.auth0.jwt;

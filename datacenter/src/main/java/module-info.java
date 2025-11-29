@@ -8,6 +8,7 @@ module datacenter {
     requires lombok;
     requires org.slf4j;
     requires io.javalin;
+    requires com.auth0.jwt;
     requires jakarta.persistence;
     requires org.hibernate.orm.core;
     requires com.fasterxml.jackson.core;

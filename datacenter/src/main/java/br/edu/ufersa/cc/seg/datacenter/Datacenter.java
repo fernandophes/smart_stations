@@ -6,7 +6,11 @@ import java.security.PublicKey;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
+
+import br.edu.ufersa.cc.seg.common.auth.TokenService;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.factories.CryptoServiceFactory;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
@@ -19,17 +23,20 @@ import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Element;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
+import br.edu.ufersa.cc.seg.common.utils.InstanceType;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
 import br.edu.ufersa.cc.seg.datacenter.entities.Snapshot;
 import br.edu.ufersa.cc.seg.datacenter.services.SnapshotService;
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Datacenter {
 
+    private final TokenService tokenService;
     private final CryptoService asymmetricCryptoService;
     private final EnvOrInputFactory envOrInputFactory;
 
@@ -55,6 +62,9 @@ public class Datacenter {
         this.serverMessenger = ServerMessengerFactory.secureUdp(asymmetricCryptoService);
 
         httpServer = Javalin.create();
+
+        final var jwtSecret = envOrInputFactory.getString("JWT_SECRET");
+        this.tokenService = new TokenService(jwtSecret);
     }
 
     public void start() {
@@ -103,14 +113,17 @@ public class Datacenter {
         httpServer
                 .get("/api/snapshots", ctx -> {
                     log.info("Requisição HTTP recebida");
-                    ctx.json(snapshotService.listAll());
+                    handleToken(tokenService, ctx, InstanceType.CLIENT,
+                            (identifier, context) -> context.json(snapshotService.listAll()));
                 })
                 .get("/api/snapshots/{starting}", ctx -> {
                     log.info("Requisição HTTP recebida");
-                    final var formattedTimestamp = ctx.pathParam("starting");
-                    final var timestamp = LocalDateTime.parse(formattedTimestamp,
-                            DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                    ctx.json(snapshotService.listAllAfter(timestamp));
+                    handleToken(tokenService, ctx, InstanceType.CLIENT, (identifier, context) -> {
+                        final var formattedTimestamp = context.pathParam("starting");
+                        final var timestamp = LocalDateTime.parse(formattedTimestamp,
+                                DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                        context.json(snapshotService.listAllAfter(timestamp));
+                    });
                 })
                 .start(8480);
 
@@ -146,6 +159,21 @@ public class Datacenter {
             return MessageFactory.error("Tipo de mensagem não suportada");
         }
 
+    }
+
+    private void handleToken(final TokenService tokenService, final Context context, final InstanceType instanceType,
+            final BiConsumer<String, Context> callback) {
+        Optional.ofNullable((String) context.header("token"))
+                .flatMap(token -> {
+                    try {
+                        final var identifier = tokenService.validateToken(token, instanceType);
+                        return Optional.of(identifier);
+                    } catch (final JWTVerificationException e) {
+                        return Optional.empty();
+                    }
+                })
+                .ifPresentOrElse(identifier -> callback.accept(identifier, context),
+                        () -> context.status(401).result("Token inválido"));
     }
 
     private void storeSnapshot(final Message request) {
