@@ -3,8 +3,6 @@
 # Usando a imagem Maven com Java 21 que você já utilizava
 # ==============================================================================
 FROM maven:3.9.10-eclipse-temurin-21 AS build
-
-# Definimos o diretório de trabalho dentro do container
 WORKDIR /app
 
 # ARGUMENTO IMPORTANTE:
@@ -15,7 +13,6 @@ ARG MODULE_NAME
 # Fazemos isso de uma vez para garantir que o Maven enxergue o projeto pai e o common
 COPY . .
 
-# O PULO DO GATO (Compilação Otimizada):
 # -pl ${MODULE_NAME} : Compila apenas o módulo que passamos no argumento
 # -am                : (Also Make) Compila também as dependências (ex: common)
 # -DskipTests        : Pula os testes para agilizar o build do container

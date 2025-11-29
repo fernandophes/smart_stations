@@ -75,6 +75,8 @@ services:
     environment:
       - DEVICE_NAME=Poste
       - LOCATION_HOST=location-server
+      - IDENTIFIER=post-a
+      - SECRET=post123
     depends_on:
       - edge-server
     networks:
@@ -92,6 +94,8 @@ services:
     environment:
       - DEVICE_NAME=Semáforo
       - LOCATION_HOST=location-server
+      - IDENTIFIER=semaphor-a
+      - SECRET=semaphor123
     depends_on:
       - edge-server
     networks:
