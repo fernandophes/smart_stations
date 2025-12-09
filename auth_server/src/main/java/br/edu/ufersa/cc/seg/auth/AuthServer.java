@@ -98,6 +98,7 @@ public class AuthServer {
          * FASE 4
          */
         asymmetricMessenger.close();
+        insecureMessenger.close();
     }
 
     private PublicKey startRsaServer() {
