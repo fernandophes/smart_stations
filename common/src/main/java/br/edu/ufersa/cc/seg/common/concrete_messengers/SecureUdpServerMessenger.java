@@ -4,13 +4,17 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.Value;
@@ -18,6 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SecureUdpServerMessenger implements ServerMessenger {
+
+    @Getter
+    private final Set<Messenger> clients = new HashSet<>();
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public class Subscription implements Closeable {
@@ -32,6 +39,7 @@ public class SecureUdpServerMessenger implements ServerMessenger {
             thread = new Thread(() -> {
                 while (isRunning.get()) {
                     final var client = accept();
+                    clients.add(client.getMessenger());
 
                     final var clientSubscription = client.getMessenger().subscribe(callback);
                     clientSubscription.handleRequest(client.getFirstMessage());
@@ -47,7 +55,8 @@ public class SecureUdpServerMessenger implements ServerMessenger {
             final var packet = new DatagramPacket(bytes, bytes.length);
             socket.receive(packet);
 
-            final var client = new SecureUdpMessenger(packet.getAddress().getHostName(), packet.getPort(), cryptoService);
+            final var client = new SecureUdpMessenger(packet.getAddress().getHostName(), packet.getPort(),
+                    cryptoService);
 
             return new ClientRegistration(client, client.receive(packet));
         }
@@ -81,17 +90,31 @@ public class SecureUdpServerMessenger implements ServerMessenger {
         this.cryptoService = cryptoService;
     }
 
+    @Override
     public int getPort() {
         return socket.getLocalPort();
     }
 
+    @Override
     public Subscription subscribe(final Function<Message, Message> callback) {
         final var subscription = new Subscription(callback);
         subscription.start();
         return subscription;
     }
 
+    @Override
     public void close() {
+        // Fechar clientes
+        clients.forEach(client -> {
+            try {
+                client.close();
+                clients.remove(client);
+            } catch (final IOException ignore) {
+                // Ignorar
+            }
+        });
+
+        // Fechar servidor
         socket.close();
     }
 

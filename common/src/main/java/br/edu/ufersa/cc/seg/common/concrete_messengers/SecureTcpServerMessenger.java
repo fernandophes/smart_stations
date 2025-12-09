@@ -3,19 +3,26 @@ package br.edu.ufersa.cc.seg.common.concrete_messengers;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SecureTcpServerMessenger implements ServerMessenger {
+
+    @Getter
+    private final Set<Messenger> clients = new HashSet<>();
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public class Subscription implements Closeable {
@@ -32,6 +39,7 @@ public class SecureTcpServerMessenger implements ServerMessenger {
                     log.info("Aguardando clientes...");
 
                     final var client = accept();
+                    clients.add(client);
                     client.subscribe(callback);
                 }
             });
@@ -79,6 +87,17 @@ public class SecureTcpServerMessenger implements ServerMessenger {
 
     @SneakyThrows
     public void close() {
+        // Fechar clientes
+        clients.forEach(client -> {
+            try {
+                client.close();
+                clients.remove(client);
+            } catch (final IOException ignore) {
+                // Ignorar
+            }
+        });
+
+        // Fechar servidor
         serverSocket.close();
     }
 

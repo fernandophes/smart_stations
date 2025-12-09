@@ -4,12 +4,16 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import br.edu.ufersa.cc.seg.common.messengers.Message;
+import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.Value;
@@ -17,6 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class UdpServerMessenger implements ServerMessenger {
+
+    @Getter
+    private final Set<Messenger> clients = new HashSet<>();
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public class Subscription implements Closeable {
@@ -31,6 +38,7 @@ public class UdpServerMessenger implements ServerMessenger {
             thread = new Thread(() -> {
                 while (isRunning.get()) {
                     final var client = accept();
+                    clients.add(client.getMessenger());
 
                     final var clientSubscription = client.getMessenger().subscribe(callback);
                     clientSubscription.handleRequest(client.getFirstMessage());
@@ -89,6 +97,17 @@ public class UdpServerMessenger implements ServerMessenger {
     }
 
     public void close() {
+        // Fechar clientes
+        clients.forEach(client -> {
+            try {
+                client.close();
+                clients.remove(client);
+            } catch (final IOException ignore) {
+                // Ignorar
+            }
+        });
+
+        // Fechar servidor
         socket.close();
     }
 
