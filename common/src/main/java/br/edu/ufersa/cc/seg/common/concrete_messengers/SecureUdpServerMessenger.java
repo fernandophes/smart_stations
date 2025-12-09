@@ -14,7 +14,6 @@ import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.Value;
@@ -23,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SecureUdpServerMessenger implements ServerMessenger {
 
-    @Getter
     private final Set<Messenger> clients = new HashSet<>();
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
