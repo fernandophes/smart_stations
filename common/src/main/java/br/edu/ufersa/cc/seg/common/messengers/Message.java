@@ -49,4 +49,9 @@ public class Message implements Serializable {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
+    public <T> T getValue(final String key) {
+        return (T) values.get(key);
+    }
+
 }
