@@ -178,7 +178,7 @@ public class Datacenter {
 
     private Message serveSymmetric(final Message request) {
         if (MessageType.USE_SYMMETRIC.equals(request.getType())) {
-            log.info("Nova conexão assimétrica. Preparando-se para usar simétrica.");
+            log.info("Nova conexão assimétrica. Preparando-se para usar simétrica...");
 
             final var encryptionKey = CryptoServiceFactory.generateAESKey();
             final var hmacKey = CryptoServiceFactory.generateAESKey();

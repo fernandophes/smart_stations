@@ -50,6 +50,7 @@ public class TcpMessenger extends Messenger {
 
     @Override
     public void close() throws IOException {
+        closeSubscriptions();
         in.close();
         out.close();
         socket.close();

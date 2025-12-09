@@ -15,7 +15,6 @@ import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,19 +35,23 @@ public class SecureUdpServerMessenger implements ServerMessenger {
 
             thread = new Thread(() -> {
                 while (isRunning.get()) {
-                    final var client = accept();
-                    clients.add(client.getMessenger());
+                    try {
+                        final var client = accept();
+                        clients.add(client.getMessenger());
 
-                    final var clientSubscription = client.getMessenger().subscribe(callback);
-                    clientSubscription.handleRequest(client.getFirstMessage());
+                        final var clientSubscription = client.getMessenger().subscribe(callback);
+                        clientSubscription.handleRequest(client.getFirstMessage());
+                    } catch (final IOException e) {
+                        log.info("Parando leitura...");
+                        close();
+                    }
                 }
             });
 
             thread.start();
         }
 
-        @SneakyThrows
-        private ClientRegistration accept() {
+        private ClientRegistration accept() throws IOException {
             final var bytes = new byte[2048];
             final var packet = new DatagramPacket(bytes, bytes.length);
             socket.receive(packet);
@@ -60,7 +63,7 @@ public class SecureUdpServerMessenger implements ServerMessenger {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             isRunning.set(false);
             thread.interrupt();
         }
@@ -106,11 +109,11 @@ public class SecureUdpServerMessenger implements ServerMessenger {
         clients.forEach(client -> {
             try {
                 client.close();
-                clients.remove(client);
             } catch (final IOException ignore) {
                 // Ignorar
             }
         });
+        clients.clear();
 
         // Fechar servidor
         socket.close();

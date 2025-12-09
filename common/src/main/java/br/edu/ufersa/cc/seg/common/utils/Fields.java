@@ -10,5 +10,7 @@ public abstract class Fields {
     public static final String HOST = "host";
     public static final String PORT = "port";
     public static final String PUBLIC_KEY = "publicEncriptionKey";
+    public static final String ENCRYPTION_KEY = "encryptionKey";
+    public static final String HMAC_KEY = "hmacKey";
 
 }

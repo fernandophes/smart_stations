@@ -34,11 +34,16 @@ public class SecureTcpServerMessenger implements ServerMessenger {
 
             thread = new Thread(() -> {
                 while (isRunning.get()) {
-                    log.info("Aguardando clientes...");
+                    try {
+                        log.info("Aguardando clientes...");
 
-                    final var client = accept();
-                    clients.add(client);
-                    client.subscribe(callback);
+                        final var client = accept();
+                        clients.add(client);
+                        client.subscribe(callback);
+                    } catch (IOException e) {
+                        log.info("Parando leitura...");
+                        close();
+                    }
                 }
             });
 
@@ -46,13 +51,12 @@ public class SecureTcpServerMessenger implements ServerMessenger {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             isRunning.set(false);
             thread.interrupt();
         }
 
-        @SneakyThrows
-        private SecureTcpMessenger accept() {
+        private SecureTcpMessenger accept() throws IOException {
             return new SecureTcpMessenger(serverSocket, cryptoService);
         }
     }
@@ -89,11 +93,11 @@ public class SecureTcpServerMessenger implements ServerMessenger {
         clients.forEach(client -> {
             try {
                 client.close();
-                clients.remove(client);
             } catch (final IOException ignore) {
                 // Ignorar
             }
         });
+        clients.clear();
 
         // Fechar servidor
         serverSocket.close();

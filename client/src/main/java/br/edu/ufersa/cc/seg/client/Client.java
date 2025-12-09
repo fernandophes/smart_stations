@@ -121,6 +121,7 @@ public class Client {
         } while (authMessenger == null);
     }
 
+    @SneakyThrows
     private String authenticate() {
         final var identifier = envOrInputFactory.getString("IDENTIFIER");
         final var secret = envOrInputFactory.getString("SECRET");

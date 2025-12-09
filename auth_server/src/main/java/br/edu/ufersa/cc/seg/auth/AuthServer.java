@@ -1,11 +1,13 @@
 package br.edu.ufersa.cc.seg.auth;
 
 import java.net.InetAddress;
+import java.security.PublicKey;
 
 import br.edu.ufersa.cc.seg.auth.dto.InstanceDto;
 import br.edu.ufersa.cc.seg.auth.exceptions.AuthFailureException;
 import br.edu.ufersa.cc.seg.auth.services.AuthService;
 import br.edu.ufersa.cc.seg.auth.services.InstanceService;
+import br.edu.ufersa.cc.seg.common.factories.CryptoServiceFactory;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
@@ -27,7 +29,7 @@ public class AuthServer {
 
     private final AuthService service;
     private final InstanceService instanceService = new InstanceService();
-    private final ServerMessenger serverMessenger = ServerMessengerFactory.tcp();
+    private ServerMessenger serverMessenger;
     private Messenger locationMessenger;
 
     public AuthServer(final EnvOrInputFactory envOrInputFactory) {
@@ -39,7 +41,8 @@ public class AuthServer {
 
     public void start() {
         connectToLocationServer();
-        register();
+        final var publicKey = startRsaServer();
+        register(publicKey);
         serverMessenger.subscribe(this::handleRequest);
         seed();
     }
@@ -48,6 +51,80 @@ public class AuthServer {
     public void stop() {
         locationMessenger.close();
         serverMessenger.close();
+    }
+
+    @SneakyThrows
+    private void connectToLocationServer() {
+        /*
+         * FASE 1
+         */
+        // Abrir servidor RSA temporário, pra receber as chaves AES
+        final var rsaPair = CryptoServiceFactory.rsaPair();
+        final var asymmetricMessenger = ServerMessengerFactory.secureUdp(rsaPair.getPrivateSide());
+        asymmetricMessenger.subscribe(message -> {
+            /*
+             * FASE 3
+             */
+            // Abrir conexão AES permanente
+            final String locationHost = message.getValue(Fields.HOST);
+            final int locationPort = message.getValue(Fields.PORT);
+            final String encryptionKey = message.getValue(Fields.ENCRYPTION_KEY);
+            final String hmacKey = message.getValue(Fields.HMAC_KEY);
+
+            // Salvar conexão no server
+            final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+            locationMessenger = MessengerFactory.secureUdp(locationHost, locationPort, cryptoService);
+
+            return MessageFactory.ok();
+        });
+
+        /*
+         * FASE 2
+         */
+        // Enviar chave pública via conexão insegura (plain text)
+        final var insecureHost = envOrInputFactory.getString("LOCATION_HOST");
+        final var insecurePort = envOrInputFactory.getInt("LOCATION_PORT");
+        final var insecureMessenger = MessengerFactory.udp(insecureHost, insecurePort);
+        final var insecureRequest = new Message(MessageType.USE_SYMMETRIC)
+                .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
+                .withValue(Fields.PORT, asymmetricMessenger.getPort())
+                .withValue(Fields.PUBLIC_KEY, rsaPair.getPublicKey().getEncoded());
+        insecureMessenger.send(insecureRequest);
+        final var insecureResponse = insecureMessenger.receive();
+
+        log.info("Conexão com Location Server: \n{}", insecureResponse.toJson());
+
+        /*
+         * FASE 4
+         */
+        asymmetricMessenger.close();
+    }
+
+    private PublicKey startRsaServer() {
+        final var rsaPair = CryptoServiceFactory.rsaPair();
+        serverMessenger = ServerMessengerFactory.secureTcp(rsaPair.getPrivateSide());
+
+        return rsaPair.getPublicKey();
+    }
+
+    @SneakyThrows
+    private void register(final PublicKey publicKey) {
+        log.info("Registrando-se no servidor de localização...");
+        final var request = new Message(MessageType.REGISTER_SERVER)
+                .withValue(Fields.SERVER_TYPE, ServerType.AUTH)
+                .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
+                .withValue(Fields.PORT, serverMessenger.getPort())
+                .withValue(Fields.PUBLIC_KEY, publicKey.getEncoded());
+
+        locationMessenger.send(request);
+
+        final var response = locationMessenger.receive();
+
+        if (response.getType().equals(MessageType.ERROR)) {
+            log.error("Erro ao registrar datacenter: {}", response.getValues());
+        } else {
+            log.info("Registrado no servidor de localização: {}");
+        }
     }
 
     private Message handleRequest(final Message request) {
@@ -64,33 +141,6 @@ public class AuthServer {
         } else {
             return MessageFactory.error("Tipo de mensagem não suportada");
         }
-    }
-
-    @SneakyThrows
-    private void register() {
-        log.info("Registrando-se no servidor de localização...");
-        final var request = new Message(MessageType.REGISTER_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.AUTH)
-                .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
-                .withValue(Fields.PORT, serverMessenger.getPort());
-
-        locationMessenger.send(request);
-
-        final var response = locationMessenger.receive();
-
-        if (response.getType().equals(MessageType.ERROR)) {
-            log.error("Erro ao registrar datacenter: {}", response.getValues());
-        } else {
-            log.info("Registrado no servidor de localização: {}");
-        }
-    }
-
-    @SneakyThrows
-    private void connectToLocationServer() {
-        final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
-        final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
-
-        locationMessenger = MessengerFactory.udp(locationHost, locationPort);
     }
 
     private void seed() {

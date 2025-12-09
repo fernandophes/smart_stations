@@ -57,6 +57,7 @@ public class SecureTcpMessenger extends SecureMessenger {
 
     @Override
     public void close() throws IOException {
+        closeSubscriptions();
         in.close();
         out.close();
         socket.close();

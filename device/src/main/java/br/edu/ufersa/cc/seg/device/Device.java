@@ -105,6 +105,7 @@ public class Device {
         } while (authMessenger == null);
     }
 
+    @SneakyThrows
     private String authenticate() {
         final var identifier = envOrInputFactory.getString("IDENTIFIER");
         final var secret = envOrInputFactory.getString("SECRET");
@@ -142,6 +143,7 @@ public class Device {
         } while (edgeMessenger == null);
     }
 
+    @SneakyThrows
     private SecureMessenger useSymmetric(final Message locationResponse) {
         final var asymmetricHost = (String) locationResponse.getValues().get(Fields.HOST);
         final var asymmetricPort = (int) locationResponse.getValues().get(Fields.PORT);

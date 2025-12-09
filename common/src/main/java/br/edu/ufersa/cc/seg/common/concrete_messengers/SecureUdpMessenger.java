@@ -64,6 +64,7 @@ public class SecureUdpMessenger extends SecureMessenger {
 
     @Override
     public void close() throws IOException {
+        closeSubscriptions();
         socket.close();
     }
 

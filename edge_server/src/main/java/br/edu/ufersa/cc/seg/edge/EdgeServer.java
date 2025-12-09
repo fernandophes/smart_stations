@@ -115,7 +115,7 @@ public class EdgeServer {
 
     private Message serveSymmetric(final Message request) {
         if (MessageType.USE_SYMMETRIC.equals(request.getType())) {
-            log.info("Nova conexão assimétrica. Preparando-se para usar simétrica.");
+            log.info("Nova conexão assimétrica. Preparando-se para usar simétrica...");
 
             final var encryptionKey = CryptoServiceFactory.generateAESKey();
             final var hmacKey = CryptoServiceFactory.generateAESKey();
@@ -134,6 +134,7 @@ public class EdgeServer {
         }
     }
 
+    @SneakyThrows
     private SecureMessenger useSymmetric(final Message locationResponse) {
         final var asymmetricHost = (String) locationResponse.getValues().get(Fields.HOST);
         final var asymmetricPort = (int) locationResponse.getValues().get(Fields.PORT);

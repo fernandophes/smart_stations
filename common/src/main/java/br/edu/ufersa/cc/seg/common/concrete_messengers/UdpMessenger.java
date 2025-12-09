@@ -58,6 +58,7 @@ public class UdpMessenger extends Messenger {
 
     @Override
     public void close() throws IOException {
+        closeSubscriptions();
         socket.close();
     }
 

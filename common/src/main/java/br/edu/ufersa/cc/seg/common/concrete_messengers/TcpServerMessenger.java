@@ -33,11 +33,16 @@ public class TcpServerMessenger implements ServerMessenger {
 
             thread = new Thread(() -> {
                 while (isRunning.get()) {
-                    log.info("Aguardando clientes...");
+                    try {
+                        log.info("Aguardando clientes...");
 
-                    final var client = accept();
-                    clients.add(client);
-                    client.subscribe(callback);
+                        final var client = accept();
+                        clients.add(client);
+                        client.subscribe(callback);
+                    } catch (final IOException e) {
+                        log.info("Parando leitura...");
+                        close();
+                    }
                 }
             });
 
@@ -45,13 +50,12 @@ public class TcpServerMessenger implements ServerMessenger {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             isRunning.set(false);
             thread.interrupt();
         }
 
-        @SneakyThrows
-        private TcpMessenger accept() {
+        private TcpMessenger accept() throws IOException {
             return new TcpMessenger(serverSocket);
         }
     }
@@ -86,11 +90,11 @@ public class TcpServerMessenger implements ServerMessenger {
         clients.forEach(client -> {
             try {
                 client.close();
-                clients.remove(client);
             } catch (final IOException ignore) {
                 // Ignorar
             }
         });
+        clients.clear();
 
         // Fechar servidor
         serverSocket.close();
