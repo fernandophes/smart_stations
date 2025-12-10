@@ -13,7 +13,7 @@
 
     <!-- Informações sobre o projeto -->
     <artifactId>auth_server</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
     <name>Servidor de Autenticação</name>
     <description>Módulo que verifica as credenciais das instâncias e fornece um tooken JWT de identificação</description>
 
