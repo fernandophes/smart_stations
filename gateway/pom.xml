@@ -24,6 +24,11 @@
             <version>6.7.0</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
+        </dependency>
+        <dependency>
             <groupId>br.edu.ufersa.cc.seg</groupId>
             <artifactId>common</artifactId>
             <version>0.0.1-SNAPSHOT</version>

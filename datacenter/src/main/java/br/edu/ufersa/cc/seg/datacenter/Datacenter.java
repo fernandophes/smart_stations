@@ -244,7 +244,6 @@ public class Datacenter {
         } else {
             return MessageFactory.error("Tipo de mensagem não suportada");
         }
-
     }
 
     private void handleToken(final TokenService tokenService, final Context context, final InstanceType instanceType,

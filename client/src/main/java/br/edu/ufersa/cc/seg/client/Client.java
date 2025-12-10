@@ -207,13 +207,13 @@ public class Client {
 
         if (response.getType().equals(MessageType.OK)) {
             log.info("Datacenter localizado! Contatando com criptografia assimétrica...");
-            useSymmetric(response, token);
+            connectToDatacenterHttp(response, token);
             log.info("Recebidos dados para criptografia simétrica. Conexão atualizada.");
         }
     }
 
     @SneakyThrows
-    private void useSymmetric(final Message locationResponse, final String token) {
+    private void connectToDatacenterHttp(final Message locationResponse, final String token) {
         final var host = (String) locationResponse.getValues().get(Fields.HOST);
         final var port = (int) locationResponse.getValues().get(Fields.PORT);
         final var publicKey = (String) locationResponse.getValues().get(Fields.PUBLIC_KEY);
