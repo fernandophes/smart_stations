@@ -24,6 +24,12 @@ public class MyHttpClient {
     }
 
     @SneakyThrows
+    public HttpResponse acceptGateway() {
+        final var request = new HttpGet(uri + "/api/accept-gateway");
+        return httpClient.execute(request);
+    }
+
+    @SneakyThrows
     public HttpResponse getSnapshotsAfter(final String token, final String timestamp) {
         final var request = new HttpGet(uri + "/api/snapshots/" + timestamp);
         request.addHeader("token", token);

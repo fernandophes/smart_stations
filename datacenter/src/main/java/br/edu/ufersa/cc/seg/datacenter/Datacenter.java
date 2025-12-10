@@ -210,6 +210,19 @@ public class Datacenter {
                         final var asymmetricEncryptedResponse = asymmetricCryptoService.encrypt(response.toBytes());
                         context.json(asymmetricEncryptedResponse);
                     });
+                }).get("api/accept-gateway", ctx -> {
+                    log.info("Conectando com Gateway");
+                    final var encryptionKey = CryptoServiceFactory.generateAESKey();
+                    final var hmacKey = CryptoServiceFactory.generateAESKey();
+
+                    final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+                    clients.put("gateway", cryptoService);
+
+                    final var response = MessageFactory.ok()
+                            .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
+                            .withValue(Fields.HMAC_KEY, hmacKey.getEncoded());
+                    final var asymmetricEncryptedResponse = asymmetricCryptoService.encrypt(response.toBytes());
+                    ctx.json(asymmetricEncryptedResponse);
                 })
                 .start(0);
 

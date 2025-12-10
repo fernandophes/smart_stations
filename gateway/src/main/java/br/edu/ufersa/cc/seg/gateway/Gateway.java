@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.PublicKey;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -12,13 +11,11 @@ import java.util.function.BiConsumer;
 import org.apache.http.util.EntityUtils;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import br.edu.ufersa.cc.seg.common.auth.TokenService;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.HybridCryptoException;
 import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
-import br.edu.ufersa.cc.seg.common.dto.SnapshotDto;
 import br.edu.ufersa.cc.seg.common.factories.CryptoServiceFactory;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
@@ -34,7 +31,6 @@ import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
-import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 public class Gateway {
 
     private static final long INTERVAL = 3_000;
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     // Dependências
     private final EnvOrInputFactory envOrInputFactory;
@@ -59,6 +54,7 @@ public class Gateway {
 
     // Mensageiros para outras aplicações
     private Messenger locationMessenger;
+    private Messenger authMessenger;
     private Messenger edgeMessenger;
     private MyHttpClient datacenterHttpClient;
     private CryptoService datacenterHttpCryptoService;
@@ -80,10 +76,13 @@ public class Gateway {
 
     public void start() {
         connectToLocationServer();
-        configureHttpServer();
+        locateAuthServer();
         locateEdgeServer();
-        locateDatacenterHttp(null);
+        locateDatacenterHttp();
         register();
+
+        // HTTP
+        configureHttpServer();
         registerHttp();
         serverMessenger.subscribe(this::serveSymmetric);
     }
@@ -247,6 +246,45 @@ public class Gateway {
     }
 
     @SneakyThrows
+    private void locateAuthServer() {
+        final var locateRequest = new Message(MessageType.LOCATE_SERVER)
+                .withValue(Fields.SERVER_TYPE, ServerType.AUTH);
+
+        do {
+            locationMessenger.send(locateRequest);
+            final var locateResponse = locationMessenger.receive();
+
+            if (locateResponse.getType().equals(MessageType.OK)) {
+                // Abrir messenger assimétrico
+                final String rsaHost = locateResponse.getValue(Fields.HOST);
+                final int rsaPort = locateResponse.getValue(Fields.PORT);
+                final String rsaPublicKey = locateResponse.getValue(Fields.PUBLIC_KEY);
+                final var rsaCryptoService = CryptoServiceFactory.publicRsa(rsaPublicKey);
+                final var rsaMessenger = MessengerFactory.secureTcp(rsaHost, rsaPort, rsaCryptoService);
+
+                // Solicitar conexão simétrica
+                final var useSymmetricRequest = new Message(MessageType.USE_SYMMETRIC);
+                rsaMessenger.send(useSymmetricRequest);
+                final var useSymmetricResponse = rsaMessenger.receive();
+
+                // Abrir messenger simétrico
+                final String aesHost = useSymmetricResponse.getValue(Fields.HOST);
+                final int aesPort = useSymmetricResponse.getValue(Fields.PORT);
+                final String aesEncryptionKey = useSymmetricResponse.getValue(Fields.ENCRYPTION_KEY);
+                final String aesHmacKey = useSymmetricResponse.getValue(Fields.HMAC_KEY);
+                final var aesCryptoService = CryptoServiceFactory.aes(aesEncryptionKey, aesHmacKey);
+                final var aesMessenger = MessengerFactory.secureTcp(aesHost, aesPort, aesCryptoService);
+
+                authMessenger = aesMessenger;
+            }
+
+            if (authMessenger == null) {
+                Thread.sleep(INTERVAL);
+            }
+        } while (authMessenger == null);
+    }
+
+    @SneakyThrows
     private void locateEdgeServer() {
         final var request = new Message(MessageType.LOCATE_SERVER)
                 .withValue(Fields.SERVER_TYPE, ServerType.EDGE);
@@ -291,7 +329,7 @@ public class Gateway {
     }
 
     @SneakyThrows
-    private void locateDatacenterHttp(final String token) {
+    private void locateDatacenterHttp() {
         log.info("Localizando Datacenter...");
 
         final var request = new Message(MessageType.LOCATE_SERVER)
@@ -302,13 +340,13 @@ public class Gateway {
 
         if (response.getType().equals(MessageType.OK)) {
             log.info("Datacenter localizado! Contatando com criptografia assimétrica...");
-            connectToDatacenterHttp(response, token);
+            connectToDatacenterHttp(response);
             log.info("Recebidos dados para criptografia simétrica. Conexão atualizada.");
         }
     }
 
     @SneakyThrows
-    private void connectToDatacenterHttp(final Message locationResponse, final String token) {
+    private void connectToDatacenterHttp(final Message locationResponse) {
         // Abrir client HTTP
         final String host = locationResponse.getValue(Fields.HOST);
         final int port = locationResponse.getValue(Fields.PORT);
@@ -319,7 +357,7 @@ public class Gateway {
         final var asymmetricCryptoService = CryptoServiceFactory.publicRsa(httpPublicKey);
 
         // Obter resposta do HTTP
-        final var response = datacenterHttpClient.useSymmetric(token);
+        final var response = datacenterHttpClient.acceptGateway();
         final var entity = response.getEntity();
         final var json = EntityUtils.toString(entity);
         final var secureMessage = SecureMessage.fromJson(json);
