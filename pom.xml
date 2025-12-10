@@ -27,7 +27,6 @@
         <module>datacenter</module>
         <module>auth_server</module>
         <module>client</module>
-        <!-- <module>client</module> -->
     </modules>
 
     <dependencies>
