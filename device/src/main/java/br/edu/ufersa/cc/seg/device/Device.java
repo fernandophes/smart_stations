@@ -2,6 +2,7 @@ package br.edu.ufersa.cc.seg.device;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.InetAddress;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -11,7 +12,9 @@ import java.util.TimerTask;
 
 import br.edu.ufersa.cc.seg.common.factories.CryptoServiceFactory;
 import br.edu.ufersa.cc.seg.common.factories.EnvOrInputFactory;
+import br.edu.ufersa.cc.seg.common.factories.MessageFactory;
 import br.edu.ufersa.cc.seg.common.factories.MessengerFactory;
+import br.edu.ufersa.cc.seg.common.factories.ServerMessengerFactory;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
@@ -77,26 +80,83 @@ public class Device {
 
     @SneakyThrows
     private void connectToLocationServer() {
-        final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
-        final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
+        /*
+         * FASE 1
+         */
+        // Abrir servidor RSA temporário, pra receber as chaves AES
+        final var rsaPair = CryptoServiceFactory.rsaPair();
+        final var asymmetricMessenger = ServerMessengerFactory.secureUdp(rsaPair.getPrivateSide());
+        asymmetricMessenger.subscribe(message -> {
+            /*
+             * FASE 3
+             */
+            // Abrir conexão AES permanente
+            final String locationHost = message.getValue(Fields.HOST);
+            final int locationPort = message.getValue(Fields.PORT);
+            final String encryptionKey = message.getValue(Fields.ENCRYPTION_KEY);
+            final String hmacKey = message.getValue(Fields.HMAC_KEY);
 
-        locationMessenger = MessengerFactory.udp(locationHost, locationPort);
+            // Salvar conexão no server
+            final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+            locationMessenger = MessengerFactory.secureUdp(locationHost, locationPort, cryptoService);
+
+            return MessageFactory.ok();
+        });
+
+        /*
+         * FASE 2
+         */
+        // Enviar chave pública via conexão insegura (plain text)
+        final var insecureHost = envOrInputFactory.getString("LOCATION_HOST");
+        final var insecurePort = envOrInputFactory.getInt("LOCATION_PORT");
+        final var insecureMessenger = MessengerFactory.udp(insecureHost, insecurePort);
+        final var insecureRequest = new Message(MessageType.USE_SYMMETRIC)
+                .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
+                .withValue(Fields.PORT, asymmetricMessenger.getPort())
+                .withValue(Fields.PUBLIC_KEY, rsaPair.getPublicKey().getEncoded());
+        insecureMessenger.send(insecureRequest);
+        final var insecureResponse = insecureMessenger.receive();
+
+        log.info("Conexão com Location Server: \n{}", insecureResponse.toJson());
+
+        /*
+         * FASE 4
+         */
+        asymmetricMessenger.close();
+        insecureMessenger.close();
     }
 
     @SneakyThrows
     private void locateAuthServer() {
-        final var request = new Message(MessageType.LOCATE_SERVER)
+        final var locateRequest = new Message(MessageType.LOCATE_SERVER)
                 .withValue(Fields.SERVER_TYPE, ServerType.AUTH);
 
         do {
-            locationMessenger.send(request);
-            final var response = locationMessenger.receive();
+            locationMessenger.send(locateRequest);
+            final var locateResponse = locationMessenger.receive();
 
-            if (response.getType().equals(MessageType.OK)) {
-                final var host = (String) response.getValues().get(Fields.HOST);
-                final var port = (int) response.getValues().get(Fields.PORT);
+            if (locateResponse.getType().equals(MessageType.OK)) {
+                // Abrir messenger assimétrico
+                final String rsaHost = locateResponse.getValue(Fields.HOST);
+                final int rsaPort = locateResponse.getValue(Fields.PORT);
+                final String rsaPublicKey = locateResponse.getValue(Fields.PUBLIC_KEY);
+                final var rsaCryptoService = CryptoServiceFactory.publicRsa(rsaPublicKey);
+                final var rsaMessenger = MessengerFactory.secureTcp(rsaHost, rsaPort, rsaCryptoService);
 
-                authMessenger = MessengerFactory.tcp(host, port);
+                // Solicitar conexão simétrica
+                final var useSymmetricRequest = new Message(MessageType.USE_SYMMETRIC);
+                rsaMessenger.send(useSymmetricRequest);
+                final var useSymmetricResponse = rsaMessenger.receive();
+
+                // Abrir messenger simétrico
+                final String aesHost = useSymmetricResponse.getValue(Fields.HOST);
+                final int aesPort = useSymmetricResponse.getValue(Fields.PORT);
+                final String aesEncryptionKey = useSymmetricResponse.getValue(Fields.ENCRYPTION_KEY);
+                final String aesHmacKey = useSymmetricResponse.getValue(Fields.HMAC_KEY);
+                final var aesCryptoService = CryptoServiceFactory.aes(aesEncryptionKey, aesHmacKey);
+                final var aesMessenger = MessengerFactory.secureTcp(aesHost, aesPort, aesCryptoService);
+
+                authMessenger = aesMessenger;
             }
 
             if (authMessenger == null) {
