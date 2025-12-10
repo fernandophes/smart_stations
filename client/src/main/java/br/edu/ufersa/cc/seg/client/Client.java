@@ -229,8 +229,8 @@ public class Client {
         final var message = Message.fromBytes(messageAsBytes);
 
         if (MessageType.OK.equals(message.getType())) {
-            final var encryptionKey = (String) message.getValues().get("ENCRYPTION_KEY");
-            final var hmacKey = (String) message.getValues().get("HMAC_KEY");
+            final var encryptionKey = (String) message.getValues().get(Fields.ENCRYPTION_KEY);
+            final var hmacKey = (String) message.getValues().get(Fields.HMAC_KEY);
 
             symmetricCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
         } else {

@@ -167,8 +167,8 @@ public class EdgeServer {
 
             return MessageFactory.ok()
                     .withValue(Fields.PORT, symmetricMessenger.getPort())
-                    .withValue("ENCRYPTION_KEY", encryptionKey.getEncoded())
-                    .withValue("HMAC_KEY", hmacKey.getEncoded());
+                    .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
+                    .withValue(Fields.HMAC_KEY, hmacKey.getEncoded());
         } else {
             return MessageFactory.error("Tipo de mensagem não suportada");
         }

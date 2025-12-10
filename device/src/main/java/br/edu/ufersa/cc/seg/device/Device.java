@@ -157,9 +157,9 @@ public class Device {
         asymmetricMessenger.send(request);
 
         final var response = asymmetricMessenger.receive();
-        final var symmetricPort = (int) response.getValues().get(Fields.PORT);
-        final var encryptionKey = (String) response.getValues().get("ENCRYPTION_KEY");
-        final var hmacKey = (String) response.getValues().get("HMAC_KEY");
+        final int symmetricPort = response.getValue(Fields.PORT);
+        final String encryptionKey = response.getValue(Fields.ENCRYPTION_KEY);
+        final String hmacKey = response.getValue(Fields.HMAC_KEY);
 
         final var symmetricCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
         return MessengerFactory.secureUdp(asymmetricHost, symmetricPort, symmetricCryptoService);
