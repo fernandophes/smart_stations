@@ -6,6 +6,7 @@
         "network",
         "device",
         "datacenter",
-        "auth"
+        "auth",
+        "client"
     ]
 }
