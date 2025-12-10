@@ -72,10 +72,10 @@ public class Datacenter {
 
     public void start() {
         connectToLocationServer();
-        serverMessenger.subscribe(this::serveSymmetric);
         configureHttpServer();
         register();
         registerHttp();
+        serverMessenger.subscribe(this::serveSymmetric);
     }
 
     @SneakyThrows
