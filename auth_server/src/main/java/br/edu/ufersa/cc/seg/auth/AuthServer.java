@@ -43,7 +43,7 @@ public class AuthServer {
         connectToLocationServer();
         final var publicKey = startRsaServer();
         register(publicKey);
-        serverMessenger.subscribe(this::handleRequest);
+        serverMessenger.subscribe(this::serveSymmetric);
         seed();
     }
 
@@ -125,6 +125,29 @@ public class AuthServer {
             log.error("Erro ao registrar datacenter: {}", response.getValues());
         } else {
             log.info("Registrado no servidor de localização: {}");
+        }
+    }
+
+    @SneakyThrows
+    private Message serveSymmetric(final Message request) {
+        if (MessageType.USE_SYMMETRIC.equals(request.getType())) {
+            log.info("Nova conexão assimétrica. Preparando-se para usar simétrica...");
+
+            final var encryptionKey = CryptoServiceFactory.generateAESKey();
+            final var hmacKey = CryptoServiceFactory.generateAESKey();
+
+            final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+            final var symmetricMessenger = ServerMessengerFactory.secureTcp(cryptoService);
+            symmetricMessenger.subscribe(this::handleRequest);
+            log.info("Aguardando mensagens simétricas...");
+
+            return MessageFactory.ok()
+                    .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
+                    .withValue(Fields.PORT, symmetricMessenger.getPort())
+                    .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
+                    .withValue(Fields.HMAC_KEY, hmacKey.getEncoded());
+        } else {
+            return MessageFactory.error("Tipo de mensagem não suportada");
         }
     }
 
