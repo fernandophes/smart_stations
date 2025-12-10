@@ -68,10 +68,50 @@ public class EdgeServer {
 
     @SneakyThrows
     private void connectToLocationServer() {
-        final var locationHost = envOrInputFactory.getString("LOCATION_HOST");
-        final var locationPort = envOrInputFactory.getInt("LOCATION_PORT");
+        /*
+         * FASE 1
+         */
+        // Abrir servidor RSA temporário, pra receber as chaves AES
+        final var rsaPair = CryptoServiceFactory.rsaPair();
+        final var asymmetricMessenger = ServerMessengerFactory.secureUdp(rsaPair.getPrivateSide());
+        asymmetricMessenger.subscribe(message -> {
+            /*
+             * FASE 3
+             */
+            // Abrir conexão AES permanente
+            final String locationHost = message.getValue(Fields.HOST);
+            final int locationPort = message.getValue(Fields.PORT);
+            final String encryptionKey = message.getValue(Fields.ENCRYPTION_KEY);
+            final String hmacKey = message.getValue(Fields.HMAC_KEY);
 
-        locationMessenger = MessengerFactory.udp(locationHost, locationPort);
+            // Salvar conexão no server
+            final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+            locationMessenger = MessengerFactory.secureUdp(locationHost, locationPort, cryptoService);
+
+            return MessageFactory.ok();
+        });
+
+        /*
+         * FASE 2
+         */
+        // Enviar chave pública via conexão insegura (plain text)
+        final var insecureHost = envOrInputFactory.getString("LOCATION_HOST");
+        final var insecurePort = envOrInputFactory.getInt("LOCATION_PORT");
+        final var insecureMessenger = MessengerFactory.udp(insecureHost, insecurePort);
+        final var insecureRequest = new Message(MessageType.USE_SYMMETRIC)
+                .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
+                .withValue(Fields.PORT, asymmetricMessenger.getPort())
+                .withValue(Fields.PUBLIC_KEY, rsaPair.getPublicKey().getEncoded());
+        insecureMessenger.send(insecureRequest);
+        final var insecureResponse = insecureMessenger.receive();
+
+        log.info("Conexão com Location Server: \n{}", insecureResponse.toJson());
+
+        /*
+         * FASE 4
+         */
+        asymmetricMessenger.close();
+        insecureMessenger.close();
     }
 
     @SneakyThrows
@@ -149,8 +189,8 @@ public class EdgeServer {
 
         final var response = asymmetricMessenger.receive();
         final var symmetricPort = (int) response.getValues().get(Fields.PORT);
-        final var encryptionKey = (String) response.getValues().get("ENCRYPTION_KEY");
-        final var hmacKey = (String) response.getValues().get("HMAC_KEY");
+        final var encryptionKey = (String) response.getValues().get(Fields.ENCRYPTION_KEY);
+        final var hmacKey = (String) response.getValues().get(Fields.HMAC_KEY);
 
         final var symmetricCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
         return MessengerFactory.secureUdp(asymmetricHost, symmetricPort, symmetricCryptoService);
