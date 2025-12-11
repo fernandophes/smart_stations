@@ -39,8 +39,8 @@ public class Device {
     private final EnvOrInputFactory envOrInputFactory;
 
     private Messenger locationMessenger;
-    private Messenger authMessenger;
-    private SecureMessenger gatewayMessenger;
+    private SecureMessenger gatewayUdpMessenger;
+    private SecureMessenger gatewayTcpMessenger;
 
     private TimerTask subscription;
 
@@ -48,9 +48,9 @@ public class Device {
 
     public void start() {
         connectToLocationServer();
-        locateAuthServer();
+        locateGatewayUdpServer();
+        locateGatewayTcpServer();
         final var token = authenticate();
-        locateGatewayServer();
 
         subscription = new TimerTask() {
             @Override
@@ -58,7 +58,7 @@ public class Device {
                 final var snapshot = simulateReading()
                         .withValue("token", token);
                 log.info("Leitura feita: {}", snapshot);
-                gatewayMessenger.send(snapshot);
+                gatewayUdpMessenger.send(snapshot);
             }
         };
 
@@ -74,7 +74,7 @@ public class Device {
         }
 
         envOrInputFactory.close();
-        gatewayMessenger.close();
+        gatewayUdpMessenger.close();
         locationMessenger.close();
     }
 
@@ -127,45 +127,6 @@ public class Device {
     }
 
     @SneakyThrows
-    private void locateAuthServer() {
-        final var locateRequest = new Message(MessageType.LOCATE_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.AUTH_TCP);
-
-        do {
-            locationMessenger.send(locateRequest);
-            final var locateResponse = locationMessenger.receive();
-
-            if (locateResponse.getType().equals(MessageType.OK)) {
-                // Abrir messenger assimétrico
-                final String rsaHost = locateResponse.getValue(Fields.HOST);
-                final int rsaPort = locateResponse.getValue(Fields.PORT);
-                final String rsaPublicKey = locateResponse.getValue(Fields.PUBLIC_KEY);
-                final var rsaCryptoService = CryptoServiceFactory.publicRsa(rsaPublicKey);
-                final var rsaMessenger = MessengerFactory.secureTcp(rsaHost, rsaPort, rsaCryptoService);
-
-                // Solicitar conexão simétrica
-                final var useSymmetricRequest = new Message(MessageType.USE_SYMMETRIC);
-                rsaMessenger.send(useSymmetricRequest);
-                final var useSymmetricResponse = rsaMessenger.receive();
-
-                // Abrir messenger simétrico
-                final String aesHost = useSymmetricResponse.getValue(Fields.HOST);
-                final int aesPort = useSymmetricResponse.getValue(Fields.PORT);
-                final String aesEncryptionKey = useSymmetricResponse.getValue(Fields.ENCRYPTION_KEY);
-                final String aesHmacKey = useSymmetricResponse.getValue(Fields.HMAC_KEY);
-                final var aesCryptoService = CryptoServiceFactory.aes(aesEncryptionKey, aesHmacKey);
-                final var aesMessenger = MessengerFactory.secureTcp(aesHost, aesPort, aesCryptoService);
-
-                authMessenger = aesMessenger;
-            }
-
-            if (authMessenger == null) {
-                Thread.sleep(INTERVAL);
-            }
-        } while (authMessenger == null);
-    }
-
-    @SneakyThrows
     private String authenticate() {
         final var identifier = envOrInputFactory.getString("IDENTIFIER");
         final var secret = envOrInputFactory.getString("SECRET");
@@ -174,14 +135,14 @@ public class Device {
                 .withValue("identifier", identifier)
                 .withValue("secret", secret);
 
-        authMessenger.send(request);
-        final var response = authMessenger.receive();
+        gatewayTcpMessenger.send(request);
+        final var response = gatewayTcpMessenger.receive();
 
         return (String) response.getValues().get("token");
     }
 
     @SneakyThrows
-    private void locateGatewayServer() {
+    private void locateGatewayUdpServer() {
         log.info("Localizando servidor de borda...");
 
         final var request = new Message(MessageType.LOCATE_SERVER)
@@ -193,18 +154,41 @@ public class Device {
 
             if (response.getType().equals(MessageType.OK)) {
                 log.info("Servidor de borda localizado! Contatando com criptografia assimétrica...");
-                gatewayMessenger = useSymmetric(response);
+                gatewayUdpMessenger = useSymmetricUdp(response);
                 log.info("Recebidos dados para criptografia simétrica. Conexão atualizada.");
             }
 
-            if (gatewayMessenger == null) {
+            if (gatewayUdpMessenger == null) {
                 Thread.sleep(INTERVAL);
             }
-        } while (gatewayMessenger == null);
+        } while (gatewayUdpMessenger == null);
     }
 
     @SneakyThrows
-    private SecureMessenger useSymmetric(final Message locationResponse) {
+    private void locateGatewayTcpServer() {
+        log.info("Localizando servidor de borda...");
+
+        final var request = new Message(MessageType.LOCATE_SERVER)
+                .withValue(Fields.SERVER_TYPE, ServerType.GATEWAY_TCP);
+
+        do {
+            locationMessenger.send(request);
+            final var response = locationMessenger.receive();
+
+            if (response.getType().equals(MessageType.OK)) {
+                log.info("Servidor de borda localizado! Contatando com criptografia assimétrica...");
+                gatewayTcpMessenger = useSymmetricTcp(response);
+                log.info("Recebidos dados para criptografia simétrica. Conexão atualizada.");
+            }
+
+            if (gatewayUdpMessenger == null) {
+                Thread.sleep(INTERVAL);
+            }
+        } while (gatewayUdpMessenger == null);
+    }
+
+    @SneakyThrows
+    private SecureMessenger useSymmetricUdp(final Message locationResponse) {
         final var asymmetricHost = (String) locationResponse.getValues().get(Fields.HOST);
         final var asymmetricPort = (int) locationResponse.getValues().get(Fields.PORT);
         final var publicKey = (String) locationResponse.getValues().get(Fields.PUBLIC_KEY);
@@ -223,6 +207,28 @@ public class Device {
 
         final var symmetricCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
         return MessengerFactory.secureUdp(asymmetricHost, symmetricPort, symmetricCryptoService);
+    }
+
+    @SneakyThrows
+    private SecureMessenger useSymmetricTcp(final Message locationResponse) {
+        final var asymmetricHost = (String) locationResponse.getValues().get(Fields.HOST);
+        final var asymmetricPort = (int) locationResponse.getValues().get(Fields.PORT);
+        final var publicKey = (String) locationResponse.getValues().get(Fields.PUBLIC_KEY);
+
+        final var asymmetricCryptoService = CryptoServiceFactory.publicRsa(publicKey);
+        final var asymmetricMessenger = MessengerFactory.secureTcp(asymmetricHost, asymmetricPort,
+                asymmetricCryptoService);
+
+        final var request = new Message(MessageType.USE_SYMMETRIC);
+        asymmetricMessenger.send(request);
+
+        final var response = asymmetricMessenger.receive();
+        final int symmetricPort = response.getValue(Fields.PORT);
+        final String encryptionKey = response.getValue(Fields.ENCRYPTION_KEY);
+        final String hmacKey = response.getValue(Fields.HMAC_KEY);
+
+        final var symmetricCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+        return MessengerFactory.secureTcp(asymmetricHost, symmetricPort, symmetricCryptoService);
     }
 
     private Message simulateReading() {

@@ -87,8 +87,8 @@ public class Gateway {
         // HTTP
         configureHttpServer();
         registerHttp();
-        tcpServerMessenger.subscribe(this::serveSymmetric);
-        udpServerMessenger.subscribe(this::serveSymmetric);
+        tcpServerMessenger.subscribe(this::serveTcpSymmetric);
+        udpServerMessenger.subscribe(this::serveUdpSymmetric);
     }
 
     @SneakyThrows
@@ -248,7 +248,7 @@ public class Gateway {
         }
     }
 
-    private Message serveSymmetric(final Message request) {
+    private Message serveUdpSymmetric(final Message request) {
         if (MessageType.USE_SYMMETRIC.equals(request.getType())) {
             log.info("Nova conexão assimétrica. Preparando-se para usar simétrica...");
 
@@ -258,6 +258,27 @@ public class Gateway {
             final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
             final var symmetricMessenger = ServerMessengerFactory.secureUdp(cryptoService);
             symmetricMessenger.subscribe(this::handleUdpRequest);
+            log.info("Aguardando mensagens simétricas...");
+
+            return MessageFactory.ok()
+                    .withValue(Fields.PORT, symmetricMessenger.getPort())
+                    .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
+                    .withValue(Fields.HMAC_KEY, hmacKey.getEncoded());
+        } else {
+            return MessageFactory.error("Tipo de mensagem não suportada");
+        }
+    }
+
+    private Message serveTcpSymmetric(final Message request) {
+        if (MessageType.USE_SYMMETRIC.equals(request.getType())) {
+            log.info("Nova conexão assimétrica. Preparando-se para usar simétrica...");
+
+            final var encryptionKey = CryptoServiceFactory.generateAESKey();
+            final var hmacKey = CryptoServiceFactory.generateAESKey();
+
+            final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+            final var symmetricMessenger = ServerMessengerFactory.secureTcp(cryptoService);
+            symmetricMessenger.subscribe(this::handleTcpRequest);
             log.info("Aguardando mensagens simétricas...");
 
             return MessageFactory.ok()
