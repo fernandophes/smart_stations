@@ -137,7 +137,7 @@ public class Datacenter {
     private void register() {
         log.info("Registrando-se no servidor de localização...");
         final var request = new Message(MessageType.REGISTER_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER)
+                .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER_UDP)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
                 .withValue(Fields.PORT, serverMessenger.getPort())
                 .withValue(Fields.PUBLIC_KEY, publicKey.getEncoded());
@@ -157,7 +157,7 @@ public class Datacenter {
     private void registerHttp() {
         log.info("Registrando-se no servidor de localização...");
         final var request = new Message(MessageType.REGISTER_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.HTTP)
+                .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER_HTTP)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
                 .withValue(Fields.PORT, httpServer.port())
                 .withValue(Fields.PUBLIC_KEY, publicKey.getEncoded());

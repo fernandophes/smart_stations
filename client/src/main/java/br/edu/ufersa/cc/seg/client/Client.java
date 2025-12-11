@@ -144,7 +144,7 @@ public class Client {
     @SneakyThrows
     private void locateAuthServer() {
         final var locateRequest = new Message(MessageType.LOCATE_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.AUTH);
+                .withValue(Fields.SERVER_TYPE, ServerType.AUTH_TCP);
 
         do {
             locationMessenger.send(locateRequest);
@@ -200,7 +200,7 @@ public class Client {
         log.info("Localizando Datacenter...");
 
         final var request = new Message(MessageType.LOCATE_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.HTTP);
+                .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER_HTTP);
 
         locationMessenger.send(request);
         final var response = locationMessenger.receive();

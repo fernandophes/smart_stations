@@ -118,7 +118,7 @@ public class EdgeServer {
     private void register() {
         log.info("Registrando-se no servidor de localização...");
         final var request = new Message(MessageType.REGISTER_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.EDGE)
+                .withValue(Fields.SERVER_TYPE, ServerType.EDGE_UDP)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
                 .withValue(Fields.PORT, serverMessenger.getPort())
                 .withValue(Fields.PUBLIC_KEY, publicKey.getEncoded());
@@ -137,7 +137,7 @@ public class EdgeServer {
     @SneakyThrows
     private void locateDatacenterServer() {
         final var request = new Message(MessageType.LOCATE_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER);
+                .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER_UDP);
 
         do {
             locationMessenger.send(request);

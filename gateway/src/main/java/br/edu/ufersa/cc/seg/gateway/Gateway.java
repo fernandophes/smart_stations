@@ -49,13 +49,14 @@ public class Gateway {
     private final Map<String, CryptoService> httpClients = new HashMap<>();
 
     // Servidores
-    private final ServerMessenger serverMessenger;
+    private final ServerMessenger tcpServerMessenger;
+    private final ServerMessenger udpServerMessenger;
     private final Javalin httpServer;
 
     // Mensageiros para outras aplicações
-    private Messenger locationMessenger;
-    private Messenger authMessenger;
-    private Messenger edgeMessenger;
+    private Messenger locationUdpMessenger;
+    private Messenger authTcpMessenger;
+    private Messenger edgeUdpMessenger;
     private MyHttpClient datacenterHttpClient;
     private CryptoService datacenterHttpCryptoService;
 
@@ -66,7 +67,8 @@ public class Gateway {
         this.publicKey = rsaPair.getPublicKey();
 
         this.rsaService = rsaPair.getPrivateSide();
-        this.serverMessenger = ServerMessengerFactory.secureTcp(rsaService);
+        this.tcpServerMessenger = ServerMessengerFactory.secureTcp(rsaService);
+        this.udpServerMessenger = ServerMessengerFactory.secureUdp(rsaService);
 
         httpServer = Javalin.create();
 
@@ -79,18 +81,20 @@ public class Gateway {
         locateAuthServer();
         locateEdgeServer();
         locateDatacenterHttp();
-        register();
+        registerTcp();
+        registerUdp();
 
         // HTTP
         configureHttpServer();
         registerHttp();
-        serverMessenger.subscribe(this::serveSymmetric);
+        tcpServerMessenger.subscribe(this::serveSymmetric);
+        udpServerMessenger.subscribe(this::serveSymmetric);
     }
 
     @SneakyThrows
     public void stop() {
-        locationMessenger.close();
-        serverMessenger.close();
+        locationUdpMessenger.close();
+        tcpServerMessenger.close();
         httpServer.stop();
     }
 
@@ -114,7 +118,7 @@ public class Gateway {
 
             // Salvar conexão no server
             final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
-            locationMessenger = MessengerFactory.secureUdp(locationHost, locationPort, cryptoService);
+            locationUdpMessenger = MessengerFactory.secureUdp(locationHost, locationPort, cryptoService);
 
             return MessageFactory.ok();
         });
@@ -185,22 +189,42 @@ public class Gateway {
     }
 
     @SneakyThrows
-    private void register() {
-        log.info("Registrando-se no servidor de localização...");
+    private void registerTcp() {
+        log.info("Registrando-se no servidor de localização (TCP)...");
         final var request = new Message(MessageType.REGISTER_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.GATEWAY)
+                .withValue(Fields.SERVER_TYPE, ServerType.GATEWAY_TCP)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
-                .withValue(Fields.PORT, serverMessenger.getPort())
+                .withValue(Fields.PORT, tcpServerMessenger.getPort())
                 .withValue(Fields.PUBLIC_KEY, publicKey.getEncoded());
 
-        locationMessenger.send(request);
+        locationUdpMessenger.send(request);
 
-        final var response = locationMessenger.receive();
+        final var response = locationUdpMessenger.receive();
 
         if (response.getType().equals(MessageType.ERROR)) {
-            log.error("Erro ao registrar gateway: {}", response.getValues());
+            log.error("Erro ao registrar gateway/TCP: {}", response.getValues());
         } else {
-            log.info("Registrado no servidor de localização: {}");
+            log.info("TCP registrado no servidor de localização: {}");
+        }
+    }
+
+    @SneakyThrows
+    private void registerUdp() {
+        log.info("Registrando-se no servidor de localização (UDP)...");
+        final var request = new Message(MessageType.REGISTER_SERVER)
+                .withValue(Fields.SERVER_TYPE, ServerType.GATEWAY_UDP)
+                .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
+                .withValue(Fields.PORT, udpServerMessenger.getPort())
+                .withValue(Fields.PUBLIC_KEY, publicKey.getEncoded());
+
+        locationUdpMessenger.send(request);
+
+        final var response = locationUdpMessenger.receive();
+
+        if (response.getType().equals(MessageType.ERROR)) {
+            log.error("Erro ao registrar gateway/UDP: {}", response.getValues());
+        } else {
+            log.info("UDP registrado no servidor de localização: {}");
         }
     }
 
@@ -208,14 +232,14 @@ public class Gateway {
     private void registerHttp() {
         log.info("Registrando-se no servidor de localização...");
         final var request = new Message(MessageType.REGISTER_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.HTTP)
+                .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER_HTTP)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
                 .withValue(Fields.PORT, httpServer.port())
                 .withValue(Fields.PUBLIC_KEY, publicKey.getEncoded());
 
-        locationMessenger.send(request);
+        locationUdpMessenger.send(request);
 
-        final var response = locationMessenger.receive();
+        final var response = locationUdpMessenger.receive();
 
         if (response.getType().equals(MessageType.ERROR)) {
             log.error("Erro ao registrar gateway HTTP: {}", response.getValues());
@@ -233,7 +257,7 @@ public class Gateway {
 
             final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
             final var symmetricMessenger = ServerMessengerFactory.secureUdp(cryptoService);
-            symmetricMessenger.subscribe(this::handleRequest);
+            symmetricMessenger.subscribe(this::handleUdpRequest);
             log.info("Aguardando mensagens simétricas...");
 
             return MessageFactory.ok()
@@ -248,11 +272,11 @@ public class Gateway {
     @SneakyThrows
     private void locateAuthServer() {
         final var locateRequest = new Message(MessageType.LOCATE_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.AUTH);
+                .withValue(Fields.SERVER_TYPE, ServerType.AUTH_TCP);
 
         do {
-            locationMessenger.send(locateRequest);
-            final var locateResponse = locationMessenger.receive();
+            locationUdpMessenger.send(locateRequest);
+            final var locateResponse = locationUdpMessenger.receive();
 
             if (locateResponse.getType().equals(MessageType.OK)) {
                 // Abrir messenger assimétrico
@@ -275,32 +299,32 @@ public class Gateway {
                 final var aesCryptoService = CryptoServiceFactory.aes(aesEncryptionKey, aesHmacKey);
                 final var aesMessenger = MessengerFactory.secureTcp(aesHost, aesPort, aesCryptoService);
 
-                authMessenger = aesMessenger;
+                authTcpMessenger = aesMessenger;
             }
 
-            if (authMessenger == null) {
+            if (authTcpMessenger == null) {
                 Thread.sleep(INTERVAL);
             }
-        } while (authMessenger == null);
+        } while (authTcpMessenger == null);
     }
 
     @SneakyThrows
     private void locateEdgeServer() {
         final var request = new Message(MessageType.LOCATE_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.EDGE);
+                .withValue(Fields.SERVER_TYPE, ServerType.EDGE_UDP);
 
         do {
-            locationMessenger.send(request);
-            final var response = locationMessenger.receive();
+            locationUdpMessenger.send(request);
+            final var response = locationUdpMessenger.receive();
 
             if (response.getType().equals(MessageType.OK)) {
-                edgeMessenger = connectToEdgeServer(response);
+                edgeUdpMessenger = connectToEdgeServer(response);
             }
 
-            if (edgeMessenger == null) {
+            if (edgeUdpMessenger == null) {
                 Thread.sleep(INTERVAL);
             }
-        } while (edgeMessenger == null);
+        } while (edgeUdpMessenger == null);
     }
 
     @SneakyThrows
@@ -333,10 +357,10 @@ public class Gateway {
         log.info("Localizando Datacenter...");
 
         final var request = new Message(MessageType.LOCATE_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.HTTP);
+                .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER_HTTP);
 
-        locationMessenger.send(request);
-        final var response = locationMessenger.receive();
+        locationUdpMessenger.send(request);
+        final var response = locationUdpMessenger.receive();
 
         if (response.getType().equals(MessageType.OK)) {
             log.info("Datacenter localizado! Contatando com criptografia assimétrica...");
@@ -375,10 +399,20 @@ public class Gateway {
     }
 
     @SneakyThrows
-    private Message handleRequest(final Message request) {
-        if (MessageType.STORE_SNAPSHOT.equals(request.getType())) {
-            edgeMessenger.send(request);
-            return edgeMessenger.receive();
+    private Message handleUdpRequest(final Message request) {
+        if (MessageType.SEND_SNAPSHOT.equals(request.getType())) {
+            edgeUdpMessenger.send(request);
+            return edgeUdpMessenger.receive();
+        } else {
+            return MessageFactory.error("Tipo de mensagem não suportada");
+        }
+    }
+
+    @SneakyThrows
+    private Message handleTcpRequest(final Message request) {
+        if (MessageType.AUTHENTICATE.equals(request.getType())) {
+            authTcpMessenger.send(request);
+            return authTcpMessenger.receive();
         } else {
             return MessageFactory.error("Tipo de mensagem não suportada");
         }

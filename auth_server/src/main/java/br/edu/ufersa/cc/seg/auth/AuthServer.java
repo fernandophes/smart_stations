@@ -112,7 +112,7 @@ public class AuthServer {
     private void register(final PublicKey publicKey) {
         log.info("Registrando-se no servidor de localização...");
         final var request = new Message(MessageType.REGISTER_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.AUTH)
+                .withValue(Fields.SERVER_TYPE, ServerType.AUTH_TCP)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
                 .withValue(Fields.PORT, serverMessenger.getPort())
                 .withValue(Fields.PUBLIC_KEY, publicKey.getEncoded());

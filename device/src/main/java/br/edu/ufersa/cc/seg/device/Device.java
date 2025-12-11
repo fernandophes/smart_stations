@@ -40,7 +40,7 @@ public class Device {
 
     private Messenger locationMessenger;
     private Messenger authMessenger;
-    private SecureMessenger edgeMessenger;
+    private SecureMessenger gatewayMessenger;
 
     private TimerTask subscription;
 
@@ -50,7 +50,7 @@ public class Device {
         connectToLocationServer();
         locateAuthServer();
         final var token = authenticate();
-        locateEdgeServer();
+        locateGatewayServer();
 
         subscription = new TimerTask() {
             @Override
@@ -58,7 +58,7 @@ public class Device {
                 final var snapshot = simulateReading()
                         .withValue("token", token);
                 log.info("Leitura feita: {}", snapshot);
-                edgeMessenger.send(snapshot);
+                gatewayMessenger.send(snapshot);
             }
         };
 
@@ -74,7 +74,7 @@ public class Device {
         }
 
         envOrInputFactory.close();
-        edgeMessenger.close();
+        gatewayMessenger.close();
         locationMessenger.close();
     }
 
@@ -129,7 +129,7 @@ public class Device {
     @SneakyThrows
     private void locateAuthServer() {
         final var locateRequest = new Message(MessageType.LOCATE_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.AUTH);
+                .withValue(Fields.SERVER_TYPE, ServerType.AUTH_TCP);
 
         do {
             locationMessenger.send(locateRequest);
@@ -181,11 +181,11 @@ public class Device {
     }
 
     @SneakyThrows
-    private void locateEdgeServer() {
+    private void locateGatewayServer() {
         log.info("Localizando servidor de borda...");
 
         final var request = new Message(MessageType.LOCATE_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.EDGE);
+                .withValue(Fields.SERVER_TYPE, ServerType.GATEWAY_UDP);
 
         do {
             locationMessenger.send(request);
@@ -193,14 +193,14 @@ public class Device {
 
             if (response.getType().equals(MessageType.OK)) {
                 log.info("Servidor de borda localizado! Contatando com criptografia assimétrica...");
-                edgeMessenger = useSymmetric(response);
+                gatewayMessenger = useSymmetric(response);
                 log.info("Recebidos dados para criptografia simétrica. Conexão atualizada.");
             }
 
-            if (edgeMessenger == null) {
+            if (gatewayMessenger == null) {
                 Thread.sleep(INTERVAL);
             }
-        } while (edgeMessenger == null);
+        } while (gatewayMessenger == null);
     }
 
     @SneakyThrows
