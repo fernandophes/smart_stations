@@ -13,5 +13,6 @@ public abstract class Fields {
     public static final String PUBLIC_KEY = "publicEncriptionKey";
     public static final String ENCRYPTION_KEY = "encryptionKey";
     public static final String HMAC_KEY = "hmacKey";
+    public static final String TOKEN = "token";
 
 }

@@ -39,6 +39,7 @@ public abstract class Messenger implements Closeable {
                         handleRequest(receive());
                     } catch (final IOException e) {
                         log.info("Parando leitura...");
+                        isRunning.set(false);
                     }
                 }
             });

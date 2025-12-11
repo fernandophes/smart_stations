@@ -25,6 +25,7 @@ import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
+import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.InstanceType;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
@@ -57,8 +58,6 @@ public class Gateway {
     private Messenger locationUdpMessenger;
     private Messenger authTcpMessenger;
     private Messenger edgeUdpMessenger;
-    private MyHttpClient datacenterHttpClient;
-    private CryptoService datacenterHttpCryptoService;
 
     public Gateway(final EnvOrInputFactory envOrInputFactory) {
         this.envOrInputFactory = envOrInputFactory;
@@ -80,12 +79,12 @@ public class Gateway {
         connectToLocationServer();
         locateAuthServer();
         locateEdgeServer();
-        locateDatacenterHttp();
+        final var datacenterHttpCl = locateDatacenterHttp();
         registerTcp();
         registerUdp();
 
         // HTTP
-        configureHttpServer();
+        configureHttpServer(datacenterHttpCl);
         registerHttp();
         tcpServerMessenger.subscribe(this::serveTcpSymmetric);
         udpServerMessenger.subscribe(this::serveUdpSymmetric);
@@ -146,19 +145,16 @@ public class Gateway {
         insecureMessenger.close();
     }
 
-    private void configureHttpServer() {
+    private void configureHttpServer(final MyHttpClient httpClient) {
         httpServer
                 .get("/api/snapshots", ctx -> {
                     log.info("Requisição HTTP recebida");
                     handleToken(ctx, InstanceType.CLIENT, (identifier, context) -> {
-                        // TODO
-                    });
-                })
-                .get("/api/snapshots/{starting}", ctx -> {
-                    log.info("Requisição HTTP recebida");
-                    handleToken(ctx, InstanceType.CLIENT, (identifier, context) -> {
-                        final var token = context.header("token");
-                        final var response = datacenterHttpClient.getSnapshotsAfter(token, identifier);
+                        // Obter o token
+                        final var token = context.header(Fields.TOKEN);
+
+                        // Chamar endpoint do datacenter
+                        final var response = httpClient.getSnapshotsAfter(token, identifier);
 
                         try {
                             // Descriptografar mensagem recebida pelo datacenter
@@ -166,13 +162,42 @@ public class Gateway {
                             final var secureJsonIn = EntityUtils.toString(entityIn);
                             final var secureMessageIn = SecureMessage.fromJson(secureJsonIn);
 
-                            final var messageAsBytes = datacenterHttpCryptoService.decrypt(secureMessageIn);
+                            final var messageAsBytes = httpClients.get(ServerType.DATACENTER_HTTP.name())
+                                    .decrypt(secureMessageIn);
 
                             // Criptografar para reenviar ao cliente
                             final var cryptoServiceOut = httpClients.get(identifier);
                             final var secureMessageOut = cryptoServiceOut.encrypt(messageAsBytes);
                             ctx.json(secureMessageOut);
-                        } catch (IOException e) {
+                        } catch (final IOException e) {
+                            // Ignorar
+                        }
+                    });
+                })
+                .get("/api/snapshots/{starting}", ctx -> {
+                    log.info("Requisição HTTP recebida");
+                    handleToken(ctx, InstanceType.CLIENT, (identifier, context) -> {
+                        // Obter o token
+                        final var token = context.header(Fields.TOKEN);
+
+                        // Chamar endpoint do datacenter
+                        final var timestamp = context.pathParam("starting");
+                        final var response = httpClient.getSnapshotsAfter(token, timestamp);
+
+                        try {
+                            // Descriptografar mensagem recebida pelo datacenter
+                            final var entityIn = response.getEntity();
+                            final var secureJsonIn = EntityUtils.toString(entityIn);
+                            final var secureMessageIn = SecureMessage.fromJson(secureJsonIn);
+
+                            final var messageAsBytes = httpClients.get(ServerType.DATACENTER_HTTP.name())
+                                    .decrypt(secureMessageIn);
+
+                            // Criptografar para reenviar ao cliente
+                            final var cryptoServiceOut = httpClients.get(identifier);
+                            final var secureMessageOut = cryptoServiceOut.encrypt(messageAsBytes);
+                            ctx.json(secureMessageOut);
+                        } catch (final IOException e) {
                             // Ignorar
                         }
                     });
@@ -180,7 +205,20 @@ public class Gateway {
                 .get("api/use-symmetric", ctx -> {
                     log.info("Novo cliente");
                     handleToken(ctx, InstanceType.CLIENT, (identifier, context) -> {
-                        // TODO
+                        // Instanciar serviço de criptografia
+                        final var encryptionKey = CryptoServiceFactory.generateAESKey();
+                        final var hmacKey = CryptoServiceFactory.generateAESKey();
+                        final var aesService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+
+                        // Guardar
+                        httpClients.put(identifier, aesService);
+
+                        // Repassar para o cliente
+                        final var response = MessageFactory.ok()
+                                .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
+                                .withValue(Fields.HMAC_KEY, hmacKey.getEncoded());
+                        final var secureResponse = rsaService.encrypt(response.toBytes());
+                        ctx.json(secureResponse);
                     });
                 })
                 .start(0);
@@ -232,7 +270,7 @@ public class Gateway {
     private void registerHttp() {
         log.info("Registrando-se no servidor de localização...");
         final var request = new Message(MessageType.REGISTER_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER_HTTP)
+                .withValue(Fields.SERVER_TYPE, ServerType.GATEWAY_HTTP)
                 .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
                 .withValue(Fields.PORT, httpServer.port())
                 .withValue(Fields.PUBLIC_KEY, publicKey.getEncoded());
@@ -265,7 +303,7 @@ public class Gateway {
                     .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
                     .withValue(Fields.HMAC_KEY, hmacKey.getEncoded());
         } else {
-            return MessageFactory.error("Tipo de mensagem não suportada");
+            return MessageFactory.error(Constants.UNSUPPORTED);
         }
     }
 
@@ -286,7 +324,7 @@ public class Gateway {
                     .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
                     .withValue(Fields.HMAC_KEY, hmacKey.getEncoded());
         } else {
-            return MessageFactory.error("Tipo de mensagem não suportada");
+            return MessageFactory.error(Constants.UNSUPPORTED);
         }
     }
 
@@ -374,7 +412,7 @@ public class Gateway {
     }
 
     @SneakyThrows
-    private void locateDatacenterHttp() {
+    private MyHttpClient locateDatacenterHttp() {
         log.info("Localizando Datacenter...");
 
         final var request = new Message(MessageType.LOCATE_SERVER)
@@ -385,17 +423,23 @@ public class Gateway {
 
         if (response.getType().equals(MessageType.OK)) {
             log.info("Datacenter localizado! Contatando com criptografia assimétrica...");
-            connectToDatacenterHttp(response);
+            final var httpClient = connectToDatacenterHttp(response);
+
             log.info("Recebidos dados para criptografia simétrica. Conexão atualizada.");
+            return httpClient;
+        } else {
+            final var msg = "Não foi possível estabelecer a criptografia híbrida";
+            log.error(msg);
+            throw new HybridCryptoException(msg);
         }
     }
 
     @SneakyThrows
-    private void connectToDatacenterHttp(final Message locationResponse) {
+    private MyHttpClient connectToDatacenterHttp(final Message locationResponse) {
         // Abrir client HTTP
         final String host = locationResponse.getValue(Fields.HOST);
         final int port = locationResponse.getValue(Fields.PORT);
-        datacenterHttpClient = new MyHttpClient(host, port);
+        final var datacenterHttpClient = new MyHttpClient(host, port);
 
         // Configurar cifragem assimétrica
         final String httpPublicKey = locationResponse.getValue(Fields.PUBLIC_KEY);
@@ -413,10 +457,13 @@ public class Gateway {
             // Configurar cifragem simétrica
             final String encryptionKey = message.getValue(Fields.ENCRYPTION_KEY);
             final String hmacKey = message.getValue(Fields.HMAC_KEY);
-            datacenterHttpCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+            final var datacenterHttpCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+            httpClients.put(ServerType.DATACENTER_HTTP.name(), datacenterHttpCryptoService);
         } else {
             throw new HybridCryptoException(message.getValue("message"));
         }
+
+        return datacenterHttpClient;
     }
 
     @SneakyThrows
@@ -425,7 +472,7 @@ public class Gateway {
             edgeUdpMessenger.send(request);
             return edgeUdpMessenger.receive();
         } else {
-            return MessageFactory.error("Tipo de mensagem não suportada");
+            return MessageFactory.error(Constants.UNSUPPORTED);
         }
     }
 
@@ -435,13 +482,13 @@ public class Gateway {
             authTcpMessenger.send(request);
             return authTcpMessenger.receive();
         } else {
-            return MessageFactory.error("Tipo de mensagem não suportada");
+            return MessageFactory.error(Constants.UNSUPPORTED);
         }
     }
 
     private void handleToken(final Context context, final InstanceType instanceType,
             final BiConsumer<String, Context> callback) {
-        Optional.ofNullable(context.header("token"))
+        Optional.ofNullable(context.header(Fields.TOKEN))
                 .flatMap(token -> {
                     try {
                         final var identifier = tokenService.validateToken(token, instanceType);

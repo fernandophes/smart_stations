@@ -4,8 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.PublicKey;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
@@ -37,8 +36,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Datacenter {
 
-    private final Map<String, CryptoService> clients = new HashMap<>();
-
     private final TokenService tokenService;
     private final CryptoService asymmetricCryptoService;
     private final EnvOrInputFactory envOrInputFactory;
@@ -48,6 +45,7 @@ public class Datacenter {
     private final Javalin httpServer;
     private final ServerMessenger serverMessenger;
     private Messenger locationMessenger;
+    private Optional<CryptoService> gatewayAesService = Optional.empty();
 
     /*
      * Serviço do banco de dados
@@ -180,7 +178,7 @@ public class Datacenter {
                     handleToken(tokenService, ctx, InstanceType.CLIENT,
                             (identifier, context) -> {
                                 final var message = MessageFactory.ok("data", snapshotService.listAll());
-                                final var encMessage = clients.get(identifier).encrypt(message.toBytes());
+                                final var encMessage = gatewayAesService.get().encrypt(message.toBytes());
                                 context.json(encMessage);
                             });
                 })
@@ -191,32 +189,17 @@ public class Datacenter {
                         final var timestamp = LocalDateTime.parse(formattedTimestamp,
                                 Constants.DATE_TIME_URL_FORMATTER);
                         final var message = MessageFactory.ok("data", snapshotService.listAllAfter(timestamp));
-                        final var encMessage = clients.get(identifier).encrypt(message.toBytes());
+                        final var encMessage = gatewayAesService.get().encrypt(message.toBytes());
                         context.json(encMessage);
                     });
                 })
-                .get("api/use-symmetric", ctx -> {
-                    log.info("Novo cliente");
-                    handleToken(tokenService, ctx, InstanceType.CLIENT, (identifier, context) -> {
-                        final var encryptionKey = CryptoServiceFactory.generateAESKey();
-                        final var hmacKey = CryptoServiceFactory.generateAESKey();
-
-                        final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
-                        clients.put(identifier, cryptoService);
-
-                        final var response = MessageFactory.ok()
-                                .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
-                                .withValue(Fields.HMAC_KEY, hmacKey.getEncoded());
-                        final var asymmetricEncryptedResponse = asymmetricCryptoService.encrypt(response.toBytes());
-                        context.json(asymmetricEncryptedResponse);
-                    });
-                }).get("api/accept-gateway", ctx -> {
+                .get("api/accept-gateway", ctx -> {
                     log.info("Conectando com Gateway");
                     final var encryptionKey = CryptoServiceFactory.generateAESKey();
                     final var hmacKey = CryptoServiceFactory.generateAESKey();
 
                     final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
-                    clients.put("gateway", cryptoService);
+                    gatewayAesService = Optional.of(cryptoService);
 
                     final var response = MessageFactory.ok()
                             .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
@@ -270,7 +253,16 @@ public class Datacenter {
                         return Optional.empty();
                     }
                 })
-                .ifPresentOrElse(identifier -> callback.accept(identifier, context),
+                .ifPresentOrElse(
+                        identifier -> {
+                            try {
+                                callback.accept(identifier, context);
+                            } catch (final NoSuchElementException e) {
+                                final var response = MessageFactory.error("AES não estabelecido com Gateway");
+                                final var encResponse = asymmetricCryptoService.encrypt(response.toBytes());
+                                context.status(400).json(encResponse);
+                            }
+                        },
                         () -> {
                             final var response = MessageFactory.error("Token invalido");
                             final var encResponse = asymmetricCryptoService.encrypt(response.toBytes());

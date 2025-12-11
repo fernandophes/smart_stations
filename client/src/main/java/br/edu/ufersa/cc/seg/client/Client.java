@@ -44,7 +44,7 @@ public class Client {
     private final EnvOrInputFactory envOrInputFactory;
 
     private Messenger locationMessenger;
-    private Messenger authMessenger;
+    private Messenger gatewayTcpMessenger;
     private MyHttpClient myClient;
 
     private TimerTask subscription;
@@ -53,9 +53,9 @@ public class Client {
     @SneakyThrows
     public void start() {
         connectToLocationServer();
-        locateAuthServer();
+        locateGatewayTcpServer();
         final var token = authenticate();
-        locateDatacenterHttp(token);
+        locateGatewayHttp(token);
 
         subscription = new TimerTask() {
             @Override
@@ -91,7 +91,7 @@ public class Client {
             subscription.cancel();
         }
         locationMessenger.close();
-        authMessenger.close();
+        gatewayTcpMessenger.close();
     }
 
     @SneakyThrows
@@ -142,9 +142,9 @@ public class Client {
     }
 
     @SneakyThrows
-    private void locateAuthServer() {
+    private void locateGatewayTcpServer() {
         final var locateRequest = new Message(MessageType.LOCATE_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.AUTH_TCP);
+                .withValue(Fields.SERVER_TYPE, ServerType.GATEWAY_TCP);
 
         do {
             locationMessenger.send(locateRequest);
@@ -171,13 +171,13 @@ public class Client {
                 final var aesCryptoService = CryptoServiceFactory.aes(aesEncryptionKey, aesHmacKey);
                 final var aesMessenger = MessengerFactory.secureTcp(aesHost, aesPort, aesCryptoService);
 
-                authMessenger = aesMessenger;
+                gatewayTcpMessenger = aesMessenger;
             }
 
-            if (authMessenger == null) {
+            if (gatewayTcpMessenger == null) {
                 Thread.sleep(INTERVAL);
             }
-        } while (authMessenger == null);
+        } while (gatewayTcpMessenger == null);
     }
 
     @SneakyThrows
@@ -189,35 +189,35 @@ public class Client {
                 .withValue("identifier", identifier)
                 .withValue("secret", secret);
 
-        authMessenger.send(request);
-        final var response = authMessenger.receive();
+        gatewayTcpMessenger.send(request);
+        final var response = gatewayTcpMessenger.receive();
 
         return (String) response.getValues().get("token");
     }
 
     @SneakyThrows
-    private void locateDatacenterHttp(final String token) {
-        log.info("Localizando Datacenter...");
+    private void locateGatewayHttp(final String token) {
+        log.info("Localizando Gateway HTTP...");
 
         final var request = new Message(MessageType.LOCATE_SERVER)
-                .withValue(Fields.SERVER_TYPE, ServerType.DATACENTER_HTTP);
+                .withValue(Fields.SERVER_TYPE, ServerType.GATEWAY_HTTP);
 
         locationMessenger.send(request);
         final var response = locationMessenger.receive();
 
         if (response.getType().equals(MessageType.OK)) {
-            log.info("Datacenter localizado! Contatando com criptografia assimétrica...");
-            connectToDatacenterHttp(response, token);
+            log.info("Gateway/HTTP localizado! Contatando com criptografia assimétrica...");
+            connectToGatewayHttp(response, token);
             log.info("Recebidos dados para criptografia simétrica. Conexão atualizada.");
         }
     }
 
     @SneakyThrows
-    private void connectToDatacenterHttp(final Message locationResponse, final String token) {
-        final var host = (String) locationResponse.getValues().get(Fields.HOST);
-        final var port = (int) locationResponse.getValues().get(Fields.PORT);
-        final var publicKey = (String) locationResponse.getValues().get(Fields.PUBLIC_KEY);
-        final var asymmetricCryptoService = CryptoServiceFactory.publicRsa(publicKey);
+    private void connectToGatewayHttp(final Message locationResponse, final String token) {
+        final String host = locationResponse.getValue(Fields.HOST);
+        final int port = locationResponse.getValue(Fields.PORT);
+        final String publicKey = locationResponse.getValue(Fields.PUBLIC_KEY);
+        final var gatewayRsaService = CryptoServiceFactory.publicRsa(publicKey);
 
         myClient = new MyHttpClient(host, port);
 
@@ -225,12 +225,12 @@ public class Client {
         final var entity = response.getEntity();
         final var json = EntityUtils.toString(entity);
         final var secureMessage = SecureMessage.fromJson(json);
-        final var messageAsBytes = asymmetricCryptoService.decrypt(secureMessage);
+        final var messageAsBytes = gatewayRsaService.decrypt(secureMessage);
         final var message = Message.fromBytes(messageAsBytes);
 
         if (MessageType.OK.equals(message.getType())) {
-            final var encryptionKey = (String) message.getValues().get(Fields.ENCRYPTION_KEY);
-            final var hmacKey = (String) message.getValues().get(Fields.HMAC_KEY);
+            final String encryptionKey = message.getValue(Fields.ENCRYPTION_KEY);
+            final String hmacKey = message.getValue(Fields.HMAC_KEY);
 
             symmetricCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
         } else {
