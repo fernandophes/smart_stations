@@ -63,6 +63,23 @@ services:
     networks:
       - ss-network
 
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: gateway # <--- Nome exato da pasta do módulo
+    container_name: gateway
+    env_file:
+      - .env
+    environment:
+      - LOCATION_HOST=location-server
+    depends_on:
+      - auth-server
+      - edge-server
+    networks:
+      - ss-network
+
   sensor:
     build:
       context: .
@@ -78,7 +95,7 @@ services:
       - IDENTIFIER=sensor-a
       - SECRET=sensor123
     depends_on:
-      - edge-server
+      - gateway
     networks:
       - ss-network
 
@@ -97,7 +114,7 @@ services:
       - IDENTIFIER=post-a
       - SECRET=post123
     depends_on:
-      - edge-server
+      - gateway
     networks:
       - ss-network
 
@@ -116,7 +133,7 @@ services:
       - IDENTIFIER=semaphor-a
       - SECRET=semaphor123
     depends_on:
-      - edge-server
+      - gateway
     networks:
       - ss-network
 
@@ -135,7 +152,7 @@ services:
       - IDENTIFIER=toten-a
       - SECRET=toten123
     depends_on:
-      - edge-server
+      - gateway
     networks:
       - ss-network
 
@@ -154,7 +171,7 @@ services:
       - IDENTIFIER=invalid-device-a
       - SECRET=invalid-device123
     depends_on:
-      - edge-server
+      - gateway
     networks:
       - ss-network
 
@@ -173,7 +190,7 @@ services:
       - IDENTIFIER=browser-a
       - SECRET=browser123
     depends_on:
-      - datacenter
+      - gateway
     networks:
       - ss-network
 
