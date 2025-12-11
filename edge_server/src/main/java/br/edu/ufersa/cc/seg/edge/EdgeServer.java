@@ -153,6 +153,7 @@ public class EdgeServer {
         } while (datacenterMessenger == null);
     }
 
+    @SneakyThrows
     private Message serveSymmetric(final Message request) {
         if (MessageType.USE_SYMMETRIC.equals(request.getType())) {
             log.info("Nova conexão assimétrica. Preparando-se para usar simétrica...");
@@ -166,6 +167,7 @@ public class EdgeServer {
             log.info("Aguardando mensagens simétricas...");
 
             return MessageFactory.ok()
+                    .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
                     .withValue(Fields.PORT, symmetricMessenger.getPort())
                     .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
                     .withValue(Fields.HMAC_KEY, hmacKey.getEncoded());
@@ -188,12 +190,13 @@ public class EdgeServer {
         asymmetricMessenger.send(request);
 
         final var response = asymmetricMessenger.receive();
+        final String symmetricHost = response.getValue(Fields.HOST);
         final var symmetricPort = (int) response.getValues().get(Fields.PORT);
         final var encryptionKey = (String) response.getValues().get(Fields.ENCRYPTION_KEY);
         final var hmacKey = (String) response.getValues().get(Fields.HMAC_KEY);
 
         final var symmetricCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
-        return MessengerFactory.secureUdp(asymmetricHost, symmetricPort, symmetricCryptoService);
+        return MessengerFactory.secureUdp(symmetricHost, symmetricPort, symmetricCryptoService);
     }
 
     private Message handleRequest(final Message request) {

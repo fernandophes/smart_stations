@@ -201,12 +201,13 @@ public class Device {
         asymmetricMessenger.send(request);
 
         final var response = asymmetricMessenger.receive();
+        final String symmetricHost = response.getValue(Fields.HOST);
         final int symmetricPort = response.getValue(Fields.PORT);
         final String encryptionKey = response.getValue(Fields.ENCRYPTION_KEY);
         final String hmacKey = response.getValue(Fields.HMAC_KEY);
 
         final var symmetricCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
-        return MessengerFactory.secureUdp(asymmetricHost, symmetricPort, symmetricCryptoService);
+        return MessengerFactory.secureUdp(symmetricHost, symmetricPort, symmetricCryptoService);
     }
 
     @SneakyThrows
@@ -223,12 +224,13 @@ public class Device {
         asymmetricMessenger.send(request);
 
         final var response = asymmetricMessenger.receive();
+        final String symmetricHost = response.getValue(Fields.HOST);
         final int symmetricPort = response.getValue(Fields.PORT);
         final String encryptionKey = response.getValue(Fields.ENCRYPTION_KEY);
         final String hmacKey = response.getValue(Fields.HMAC_KEY);
 
         final var symmetricCryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
-        return MessengerFactory.secureTcp(asymmetricHost, symmetricPort, symmetricCryptoService);
+        return MessengerFactory.secureTcp(symmetricHost, symmetricPort, symmetricCryptoService);
     }
 
     private Message simulateReading() {

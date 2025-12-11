@@ -286,6 +286,7 @@ public class Gateway {
         }
     }
 
+    @SneakyThrows
     private Message serveUdpSymmetric(final Message request) {
         if (MessageType.USE_SYMMETRIC.equals(request.getType())) {
             log.info("Nova conexão assimétrica. Preparando-se para usar simétrica...");
@@ -299,6 +300,7 @@ public class Gateway {
             log.info("Aguardando mensagens simétricas...");
 
             return MessageFactory.ok()
+                    .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
                     .withValue(Fields.PORT, symmetricMessenger.getPort())
                     .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
                     .withValue(Fields.HMAC_KEY, hmacKey.getEncoded());
@@ -307,6 +309,7 @@ public class Gateway {
         }
     }
 
+    @SneakyThrows
     private Message serveTcpSymmetric(final Message request) {
         if (MessageType.USE_SYMMETRIC.equals(request.getType())) {
             log.info("Nova conexão assimétrica. Preparando-se para usar simétrica...");
@@ -320,6 +323,7 @@ public class Gateway {
             log.info("Aguardando mensagens simétricas...");
 
             return MessageFactory.ok()
+                    .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
                     .withValue(Fields.PORT, symmetricMessenger.getPort())
                     .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
                     .withValue(Fields.HMAC_KEY, hmacKey.getEncoded());
@@ -401,11 +405,12 @@ public class Gateway {
         final var response = rsaMessenger.receive();
 
         // Abrir messenger AES permanente
+        final String aesHost = response.getValue(Fields.HOST);
         final int aesPort = response.getValue(Fields.PORT);
         final String encryptionKey = response.getValue(Fields.ENCRYPTION_KEY);
         final String hmacKey = response.getValue(Fields.HMAC_KEY);
         final var edgeAesService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
-        final var aesMessenger = MessengerFactory.secureUdp(rsaHost, aesPort, edgeAesService);
+        final var aesMessenger = MessengerFactory.secureUdp(aesHost, aesPort, edgeAesService);
 
         rsaMessenger.close();
         return aesMessenger;

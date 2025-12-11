@@ -212,6 +212,7 @@ public class Datacenter {
         log.info("Servidor HTTP iniciado na porta {}", httpServer.port());
     }
 
+    @SneakyThrows
     private Message serveSymmetric(final Message request) {
         if (MessageType.USE_SYMMETRIC.equals(request.getType())) {
             log.info("Nova conexão assimétrica. Preparando-se para usar simétrica...");
@@ -225,6 +226,7 @@ public class Datacenter {
             log.info("Aguardando mensagens simétricas...");
 
             return MessageFactory.ok()
+                    .withValue(Fields.HOST, InetAddress.getLocalHost().getHostAddress())
                     .withValue(Fields.PORT, symmetricMessenger.getPort())
                     .withValue(Fields.ENCRYPTION_KEY, encryptionKey.getEncoded())
                     .withValue(Fields.HMAC_KEY, hmacKey.getEncoded());
