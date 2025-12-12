@@ -221,10 +221,13 @@ public class Gateway {
             while (interfaceAddresses.hasMoreElements()) {
                 final var nextElement = interfaceAddresses.nextElement();
                 final var ipParts = nextElement.getHostAddress().split("\\.");
-                final var prefix = String.join(".", ipParts[0], ipParts[1]);
 
-                if (remoteHostAddress.startsWith(prefix)) {
-                    return nextElement.getHostAddress();
+                if (ipParts.length >= 2) {
+                    final var prefix = String.join(".", ipParts[0], ipParts[1]);
+
+                    if (remoteHostAddress.startsWith(prefix)) {
+                        return nextElement.getHostAddress();
+                    }
                 }
             }
         }
