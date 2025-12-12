@@ -13,6 +13,7 @@ import org.apache.http.util.EntityUtils;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 
+import br.edu.ufersa.cc.seg.FilterFirewall;
 import br.edu.ufersa.cc.seg.common.auth.TokenService;
 import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.HybridCryptoException;
@@ -26,6 +27,7 @@ import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import br.edu.ufersa.cc.seg.common.messengers.ServerMessenger;
+import br.edu.ufersa.cc.seg.common.utils.ConnectionType;
 import br.edu.ufersa.cc.seg.common.utils.Constants;
 import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.InstanceType;
@@ -52,6 +54,9 @@ public class Gateway {
     private final String intranetHost;
     private final String internetHost;
 
+    // Firewalls
+    private final FilterFirewall filterFirewall = new FilterFirewall();
+
     // Servidores
     private final ServerMessenger tcpServerMessenger;
     private final ServerMessenger udpServerMessenger;
@@ -64,6 +69,7 @@ public class Gateway {
     private Messenger locationUdpInternetMessenger;
     private Messenger authTcpMessenger;
     private Messenger edgeUdpMessenger;
+    private MyHttpClient datacenterHttpClient;
 
     public Gateway(final EnvOrInputFactory envOrInputFactory) {
         this.envOrInputFactory = envOrInputFactory;
@@ -87,19 +93,27 @@ public class Gateway {
     }
 
     public void start() {
+        // TCP e UDP
         connectToLocationIntranetServer(locationIntranetHost);
         connectToLocationInternetServer(locationInternetHost);
         locateAuthServer();
         locateEdgeServer();
-        final var datacenterHttpCl = locateDatacenterHttp();
-        registerTcp();
-        registerUdp();
 
         // HTTP
-        configureHttpServer(datacenterHttpCl);
+        locateDatacenterHttp();
+        configureHttpServer(datacenterHttpClient);
         registerHttp();
+
+        // Escrever a regra do Firewall de Filtro de Pacotes
+        writeRules();
+
+        // Começar a receber mensagens
         tcpServerMessenger.subscribe(this::serveTcpSymmetric);
         udpServerMessenger.subscribe(this::serveUdpSymmetric);
+
+        // Registrar-se no servidor de localização
+        registerTcp();
+        registerUdp();
     }
 
     @SneakyThrows
@@ -507,7 +521,7 @@ public class Gateway {
     }
 
     @SneakyThrows
-    private MyHttpClient locateDatacenterHttp() {
+    private void locateDatacenterHttp() {
         log.info("Localizando Datacenter...");
 
         final var request = new Message(MessageType.LOCATE_SERVER)
@@ -518,10 +532,8 @@ public class Gateway {
 
         if (response.getType().equals(MessageType.OK)) {
             log.info("Datacenter localizado! Contatando com criptografia assimétrica...");
-            final var httpClient = connectToDatacenterHttp(response);
-
+            connectToDatacenterHttp(response);
             log.info("Recebidos dados para criptografia simétrica. Conexão atualizada.");
-            return httpClient;
         } else {
             final var msg = "Não foi possível estabelecer a criptografia híbrida";
             log.error(msg);
@@ -530,11 +542,11 @@ public class Gateway {
     }
 
     @SneakyThrows
-    private MyHttpClient connectToDatacenterHttp(final Message locationResponse) {
+    private void connectToDatacenterHttp(final Message locationResponse) {
         // Abrir client HTTP
         final String host = locationResponse.getValue(Fields.HOST);
         final int port = locationResponse.getValue(Fields.PORT);
-        final var datacenterHttpClient = new MyHttpClient(host, port);
+        datacenterHttpClient = new MyHttpClient(host, port);
 
         // Configurar cifragem assimétrica
         final String httpPublicKey = locationResponse.getValue(Fields.PUBLIC_KEY);
@@ -557,8 +569,13 @@ public class Gateway {
         } else {
             throw new HybridCryptoException(message.getValue("message"));
         }
+    }
 
-        return datacenterHttpClient;
+    private void writeRules() {
+        filterFirewall.permit(ConnectionType.TCP, authTcpMessenger)
+                .permit(ConnectionType.UDP, edgeUdpMessenger)
+                .permit(ConnectionType.HTTP, datacenterHttpClient.getHost(), datacenterHttpClient.getPort())
+                .printRules();
     }
 
     @SneakyThrows

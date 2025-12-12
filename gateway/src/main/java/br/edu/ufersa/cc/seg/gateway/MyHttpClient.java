@@ -1,10 +1,13 @@
 package br.edu.ufersa.cc.seg.gateway;
 
+import java.net.InetAddress;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClients;
 
+import lombok.Getter;
 import lombok.SneakyThrows;
 
 public class MyHttpClient {
@@ -12,7 +15,16 @@ public class MyHttpClient {
     private final HttpClient httpClient = HttpClients.createDefault();
     private final String uri;
 
+    @Getter
+    private final InetAddress host;
+
+    @Getter
+    private final int port;
+
+    @SneakyThrows
     public MyHttpClient(final String host, final int port) {
+        this.host = InetAddress.getByName(host);
+        this.port = port;
         this.uri = "http://" + host + ":" + port;
     }
 
