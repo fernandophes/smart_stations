@@ -38,7 +38,8 @@ public class SecureUdpMessenger extends SecureMessenger {
         final var secureMessage = cryptoService.encrypt(message.toBytes()).toBytes();
         final var packet = new DatagramPacket(secureMessage, secureMessage.length, destinationHost, destinationPort);
 
-        log.info("Enviando mensagem do tipo {} para {}:{}", message.getType(), destinationHost, destinationPort);
+        log.info("Enviando mensagem do tipo {} para {}/{}:{}", message.getType(), destinationHost.getHostName(),
+                destinationHost.getHostAddress(), destinationPort);
         socket.send(packet);
     }
 
@@ -57,8 +58,8 @@ public class SecureUdpMessenger extends SecureMessenger {
         final var messageAsBytes = cryptoService.decrypt(secureMessage);
         final var message = Message.fromBytes(messageAsBytes);
 
-        log.info("Recebida mensagem do tipo {} de {}:{}", message.getType(), packet.getAddress().getHostName(),
-                packet.getPort());
+        log.info("Recebida mensagem do tipo {} de {}/{}:{}", message.getType(), packet.getAddress().getHostName(),
+                destinationHost.getHostAddress(),packet.getPort());
         return message;
     }
 

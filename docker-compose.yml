@@ -1,17 +1,31 @@
 services:
-  location-server:
+  location-server-intranet:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         MODULE_NAME: location_server # <--- Nome exato da pasta do módulo
-    container_name: location-server
+    container_name: location-server-intranet
     env_file:
       - .env
     environment:
       - PORT=${LOCATION_PORT}
     networks:
-      - ss-network
+      - intranet
+
+  location-server-internet:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: location_server # <--- Nome exato da pasta do módulo
+    container_name: location-server-internet
+    env_file:
+      - .env
+    environment:
+      - PORT=${LOCATION_PORT}
+    networks:
+      - internet
 
   auth-server:
     build:
@@ -23,11 +37,11 @@ services:
     env_file:
       - .env
     environment:
-      - LOCATION_HOST=location-server
+      - LOCATION_HOST=location-server-intranet
     depends_on:
-      - location-server
+      - location-server-intranet
     networks:
-      - ss-network
+      - intranet
 
   datacenter:
     build:
@@ -39,13 +53,13 @@ services:
     env_file:
       - .env
     environment:
-      - LOCATION_HOST=location-server
+      - LOCATION_HOST=location-server-intranet
     ports:
       - "8480:8480"
     depends_on:
-      - location-server
+      - location-server-intranet
     networks:
-      - ss-network
+      - intranet
 
   edge-server:
     build:
@@ -57,11 +71,11 @@ services:
     env_file:
       - .env
     environment:
-      - LOCATION_HOST=location-server
+      - LOCATION_HOST=location-server-intranet
     depends_on:
       - datacenter
     networks:
-      - ss-network
+      - intranet
 
   gateway:
     build:
@@ -73,12 +87,14 @@ services:
     env_file:
       - .env
     environment:
-      - LOCATION_HOST=location-server
+      - LOCATION_INTRANET_HOST=location-server-intranet
+      - LOCATION_INTERNET_HOST=location-server-internet
     depends_on:
       - auth-server
       - edge-server
     networks:
-      - ss-network
+      - intranet
+      - internet
 
   sensor:
     build:
@@ -91,13 +107,13 @@ services:
       - .env
     environment:
       - DEVICE_NAME=Sensor
-      - LOCATION_HOST=location-server
+      - LOCATION_HOST=location-server-internet
       - IDENTIFIER=sensor-a
       - SECRET=sensor123
     depends_on:
       - gateway
     networks:
-      - ss-network
+      - internet
 
   poste:
     build:
@@ -110,13 +126,13 @@ services:
       - .env
     environment:
       - DEVICE_NAME=Poste
-      - LOCATION_HOST=location-server
+      - LOCATION_HOST=location-server-internet
       - IDENTIFIER=post-a
       - SECRET=post123
     depends_on:
       - gateway
     networks:
-      - ss-network
+      - internet
 
   semaforo:
     build:
@@ -129,13 +145,13 @@ services:
       - .env
     environment:
       - DEVICE_NAME=Semáforo
-      - LOCATION_HOST=location-server
+      - LOCATION_HOST=location-server-internet
       - IDENTIFIER=semaphor-a
       - SECRET=semaphor123
     depends_on:
       - gateway
     networks:
-      - ss-network
+      - internet
 
   toten:
     build:
@@ -148,13 +164,13 @@ services:
       - .env
     environment:
       - DEVICE_NAME=Toten
-      - LOCATION_HOST=location-server
+      - LOCATION_HOST=location-server-internet
       - IDENTIFIER=toten-a
       - SECRET=toten123
     depends_on:
       - gateway
     networks:
-      - ss-network
+      - internet
 
   invalid-device:
     build:
@@ -167,13 +183,13 @@ services:
       - .env
     environment:
       - DEVICE_NAME=Semáforo
-      - LOCATION_HOST=location-server
+      - LOCATION_HOST=location-server-internet
       - IDENTIFIER=invalid-device-a
       - SECRET=invalid-device123
     depends_on:
       - gateway
     networks:
-      - ss-network
+      - internet
 
   browser:
     build:
@@ -186,14 +202,16 @@ services:
       - .env
     environment:
       - CLIENT_NAME=Browser
-      - LOCATION_HOST=location-server
+      - LOCATION_HOST=location-server-internet
       - IDENTIFIER=browser-a
       - SECRET=browser123
     depends_on:
       - gateway
     networks:
-      - ss-network
+      - internet
 
 networks:
-  ss-network:
+  intranet:
+    driver: bridge
+  internet:
     driver: bridge

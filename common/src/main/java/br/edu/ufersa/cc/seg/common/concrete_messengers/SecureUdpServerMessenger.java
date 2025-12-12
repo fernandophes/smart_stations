@@ -86,7 +86,7 @@ public class SecureUdpServerMessenger implements ServerMessenger {
         this(new DatagramSocket(port), cryptoService);
     }
 
-    private SecureUdpServerMessenger(final DatagramSocket socket, final CryptoService cryptoService) {
+    public SecureUdpServerMessenger(final DatagramSocket socket, final CryptoService cryptoService) {
         this.socket = socket;
         this.cryptoService = cryptoService;
     }

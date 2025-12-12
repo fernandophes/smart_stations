@@ -11,7 +11,9 @@ import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class SecureTcpMessenger extends SecureMessenger {
 
     private final Socket socket;
@@ -44,6 +46,9 @@ public class SecureTcpMessenger extends SecureMessenger {
         final var secureMessage = cryptoService.encrypt(message.toBytes());
         out.writeObject(secureMessage);
         out.flush();
+
+        log.info("Enviando mensagem do tipo {} para {}/{}:{}", message.getType(), socket.getInetAddress().getHostName(),
+                socket.getInetAddress().getHostAddress(), socket.getPort());
     }
 
     @Override
@@ -51,8 +56,12 @@ public class SecureTcpMessenger extends SecureMessenger {
     public Message receive() {
         final var secureMessage = (SecureMessage) in.readObject();
         final var messageAsBytes = cryptoService.decrypt(secureMessage);
+        final var message = Message.fromBytes(messageAsBytes);
 
-        return Message.fromBytes(messageAsBytes);
+        log.info("Recebida mensagem do tipo {} para {}/{}:{}", message.getType(), socket.getInetAddress().getHostName(),
+                socket.getInetAddress().getHostAddress(), socket.getPort());
+
+        return message;
     }
 
     @Override

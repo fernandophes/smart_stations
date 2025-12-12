@@ -70,7 +70,7 @@ public class TcpServerMessenger implements ServerMessenger {
         this(new ServerSocket(port));
     }
 
-    private TcpServerMessenger(final ServerSocket socket) {
+    public TcpServerMessenger(final ServerSocket socket) {
         this.serverSocket = socket;
     }
 

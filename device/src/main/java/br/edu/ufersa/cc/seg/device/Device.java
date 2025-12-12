@@ -143,7 +143,7 @@ public class Device {
 
     @SneakyThrows
     private void locateGatewayUdpServer() {
-        log.info("Localizando servidor de borda...");
+        log.info("Localizando Gateway UDP...");
 
         final var request = new Message(MessageType.LOCATE_SERVER)
                 .withValue(Fields.SERVER_TYPE, ServerType.GATEWAY_UDP);
@@ -153,9 +153,11 @@ public class Device {
             final var response = locationMessenger.receive();
 
             if (response.getType().equals(MessageType.OK)) {
-                log.info("Servidor de borda localizado! Contatando com criptografia assimétrica...");
+                log.info("Gateway UDP localizado! Contatando com criptografia assimétrica...");
                 gatewayUdpMessenger = useSymmetricUdp(response);
                 log.info("Recebidos dados para criptografia simétrica. Conexão atualizada.");
+            } else {
+                log.info("Gateway UDP não localizado, tentando novamente em instantes...");
             }
 
             if (gatewayUdpMessenger == null) {
@@ -166,7 +168,7 @@ public class Device {
 
     @SneakyThrows
     private void locateGatewayTcpServer() {
-        log.info("Localizando servidor de borda...");
+        log.info("Localizando Gateway TCP...");
 
         final var request = new Message(MessageType.LOCATE_SERVER)
                 .withValue(Fields.SERVER_TYPE, ServerType.GATEWAY_TCP);
@@ -176,9 +178,11 @@ public class Device {
             final var response = locationMessenger.receive();
 
             if (response.getType().equals(MessageType.OK)) {
-                log.info("Servidor de borda localizado! Contatando com criptografia assimétrica...");
+                log.info("Gateway TCP localizado! Contatando com criptografia assimétrica...");
                 gatewayTcpMessenger = useSymmetricTcp(response);
                 log.info("Recebidos dados para criptografia simétrica. Conexão atualizada.");
+            } else {
+                log.info("Gateway TCP não localizado, tentando novamente em instantes...");
             }
 
             if (gatewayUdpMessenger == null) {

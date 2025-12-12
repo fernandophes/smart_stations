@@ -9,7 +9,9 @@ import java.net.Socket;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class TcpMessenger extends Messenger {
 
     private final Socket socket;
@@ -40,12 +42,19 @@ public class TcpMessenger extends Messenger {
     public void send(final Message message) {
         out.writeObject(message);
         out.flush();
+
+        log.info("Enviando mensagem do tipo {} para {}/{}:{}", message.getType(), socket.getInetAddress().getHostName(),
+                socket.getInetAddress().getHostAddress(), socket.getPort());
     }
 
     @Override
     @SneakyThrows
     public Message receive() {
-        return (Message) in.readObject();
+        final var message = (Message) in.readObject();
+        log.info("Recebida mensagem do tipo {} para {}/{}:{}", message.getType(), socket.getInetAddress().getHostName(),
+                socket.getInetAddress().getHostAddress(), socket.getPort());
+
+        return message;
     }
 
     @Override

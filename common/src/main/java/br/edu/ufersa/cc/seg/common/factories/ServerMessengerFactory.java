@@ -1,5 +1,9 @@
 package br.edu.ufersa.cc.seg.common.factories;
 
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+
 import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureTcpServerMessenger;
 import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureUdpServerMessenger;
 import br.edu.ufersa.cc.seg.common.concrete_messengers.TcpServerMessenger;
@@ -24,6 +28,11 @@ public abstract class ServerMessengerFactory {
     }
 
     @SneakyThrows
+    public static ServerMessenger tcp(final String host, final int port) {
+        return new TcpServerMessenger(new ServerSocket(port, 50, InetAddress.getByName(host)));
+    }
+
+    @SneakyThrows
     public static ServerMessenger udp() {
         return new UdpServerMessenger();
     }
@@ -31,6 +40,11 @@ public abstract class ServerMessengerFactory {
     @SneakyThrows
     public static ServerMessenger udp(final int port) {
         return new UdpServerMessenger(port);
+    }
+
+    @SneakyThrows
+    public static ServerMessenger udp(final String host, final int port) {
+        return new UdpServerMessenger(new DatagramSocket(port, InetAddress.getByName(host)));
     }
 
     @SneakyThrows
@@ -44,6 +58,11 @@ public abstract class ServerMessengerFactory {
     }
 
     @SneakyThrows
+    public static ServerMessenger secureTcp(final String host, final int port, final CryptoService cryptoService) {
+        return new SecureTcpServerMessenger(new ServerSocket(port, 50, InetAddress.getByName(host)), cryptoService);
+    }
+
+    @SneakyThrows
     public static ServerMessenger secureUdp(final CryptoService cryptoService) {
         return new SecureUdpServerMessenger(cryptoService);
     }
@@ -51,6 +70,11 @@ public abstract class ServerMessengerFactory {
     @SneakyThrows
     public static ServerMessenger secureUdp(final int port, final CryptoService cryptoService) {
         return new SecureUdpServerMessenger(port, cryptoService);
+    }
+
+    @SneakyThrows
+    public static ServerMessenger secureUdp(final String host, final int port, final CryptoService cryptoService) {
+        return new SecureUdpServerMessenger(new DatagramSocket(port, InetAddress.getByName(host)), cryptoService);
     }
 
 }

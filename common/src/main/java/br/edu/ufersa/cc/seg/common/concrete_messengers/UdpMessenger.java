@@ -34,7 +34,8 @@ public class UdpMessenger extends Messenger {
         final var messageAsBytes = message.toBytes();
         final var packet = new DatagramPacket(messageAsBytes, messageAsBytes.length, destinationHost, destinationPort);
 
-        log.info("Enviando mensagem do tipo {} para {}:{}", message.getType(), destinationHost, destinationPort);
+        log.info("Enviando mensagem do tipo {} para {}/{}:{}", message.getType(), destinationHost.getHostName(),
+                destinationHost.getHostAddress(), destinationPort);
         socket.send(packet);
     }
 
@@ -51,8 +52,8 @@ public class UdpMessenger extends Messenger {
     public Message receive(final DatagramPacket packet) {
         final var message = Message.fromBytes(packet.getData());
 
-        log.info("Recebida mensagem do tipo {} de {}:{}", message.getType(), packet.getAddress().getHostName(),
-                packet.getPort());
+        log.info("Recebida mensagem do tipo {} de {}/{}:{}", message.getType(), packet.getAddress().getHostName(),
+                destinationHost.getHostAddress(), packet.getPort());
         return message;
     }
 

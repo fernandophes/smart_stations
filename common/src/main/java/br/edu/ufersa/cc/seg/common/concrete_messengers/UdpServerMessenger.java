@@ -83,7 +83,7 @@ public class UdpServerMessenger implements ServerMessenger {
         this(new DatagramSocket(port));
     }
 
-    private UdpServerMessenger(final DatagramSocket socket) {
+    public UdpServerMessenger(final DatagramSocket socket) {
         this.socket = socket;
     }
 

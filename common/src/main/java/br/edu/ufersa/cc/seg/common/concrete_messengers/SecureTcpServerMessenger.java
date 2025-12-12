@@ -72,7 +72,7 @@ public class SecureTcpServerMessenger implements ServerMessenger {
         this(new ServerSocket(port), cryptoService);
     }
 
-    private SecureTcpServerMessenger(final ServerSocket socket, final CryptoService cryptoService) {
+    public SecureTcpServerMessenger(final ServerSocket socket, final CryptoService cryptoService) {
         this.serverSocket = socket;
         this.cryptoService = cryptoService;
     }

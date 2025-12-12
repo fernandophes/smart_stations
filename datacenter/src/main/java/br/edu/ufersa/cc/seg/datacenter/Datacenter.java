@@ -52,8 +52,7 @@ public class Datacenter {
      */
     private final SnapshotService snapshotService = new SnapshotService();
 
-    public Datacenter(final EnvOrInputFactory envOrInputFactory)
-            throws IOException {
+    public Datacenter(final EnvOrInputFactory envOrInputFactory) throws IOException {
         this.envOrInputFactory = envOrInputFactory;
 
         final var rsaPair = CryptoServiceFactory.rsaPair();
