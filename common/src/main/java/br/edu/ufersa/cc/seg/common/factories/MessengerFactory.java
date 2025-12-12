@@ -3,6 +3,7 @@ package br.edu.ufersa.cc.seg.common.factories;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureTcpMessenger;
 import br.edu.ufersa.cc.seg.common.concrete_messengers.SecureUdpMessenger;
@@ -12,14 +13,19 @@ import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
 import lombok.AccessLevel;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.Value;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public abstract class MessengerFactory {
 
-    @Value
+    @FunctionalInterface
+    private static interface TriFunction<A, B, C, R> {
+        R apply(A a, B b, C c);
+    }
+
+    @Data
     private static class MessengerInfo {
         private final String host;
         private final int port;
@@ -32,47 +38,57 @@ public abstract class MessengerFactory {
 
     public static Messenger tcp(final String host, final int port) {
         final var info = new MessengerInfo(host, port);
-
-        return Optional.ofNullable(TCP_MESSENGERS.get(info))
-                .orElseGet(() -> {
-                    final var messenger = createTcpMessenger(host, port);
-                    TCP_MESSENGERS.put(info, messenger);
-
-                    return messenger;
-                });
+        return findOrCreate(TCP_MESSENGERS, info, MessengerFactory::createTcpMessenger);
     }
 
     public static Messenger udp(final String host, final int port) {
         final var info = new MessengerInfo(host, port);
-
-        return Optional.ofNullable(UDP_MESSENGERS.get(info))
-                .orElseGet(() -> {
-                    final var messenger = createUdpMessenger(host, port);
-                    UDP_MESSENGERS.put(info, messenger);
-
-                    return messenger;
-                });
+        return findOrCreate(UDP_MESSENGERS, info, MessengerFactory::createUdpMessenger);
     }
 
     public static SecureMessenger secureTcp(final String host, final int port, final CryptoService cryptoService) {
         final var info = new MessengerInfo(host, port);
+        return findOrCreate(SECURE_TCP_MESSENGERS, info, cryptoService, MessengerFactory::createSecureTcpMessenger);
+    }
 
-        return Optional.ofNullable(SECURE_TCP_MESSENGERS.get(info))
+    public static SecureMessenger secureUdp(final String host, final int port, final CryptoService cryptoService) {
+        final var info = new MessengerInfo(host, port);
+        return findOrCreate(SECURE_UDP_MESSENGERS, info, cryptoService, MessengerFactory::createSecureUdpMessenger);
+    }
+
+    private static <M extends Messenger> M findOrCreate(final Map<MessengerInfo, M> map, final MessengerInfo info,
+            final BiFunction<String, Integer, M> creator) {
+        return Optional.ofNullable(map.get(info))
+                .flatMap(messenger -> {
+                    if (messenger.isClosed()) {
+                        return Optional.empty();
+                    } else {
+                        map.remove(info);
+                        return Optional.of(messenger);
+                    }
+                })
                 .orElseGet(() -> {
-                    final var messenger = createSecureTcpMessenger(host, port, cryptoService);
-                    SECURE_TCP_MESSENGERS.put(info, messenger);
+                    final var messenger = creator.apply(info.getHost(), info.getPort());
+                    map.put(info, messenger);
 
                     return messenger;
                 });
     }
 
-    public static SecureMessenger secureUdp(final String host, final int port, final CryptoService cryptoService) {
-        final var info = new MessengerInfo(host, port);
-
-        return Optional.ofNullable(SECURE_UDP_MESSENGERS.get(info))
+    private static <S extends SecureMessenger> S findOrCreate(final Map<MessengerInfo, S> map, final MessengerInfo info,
+            final CryptoService cryptoService, final TriFunction<String, Integer, CryptoService, S> creator) {
+        return Optional.ofNullable(map.get(info))
+                .flatMap(messenger -> {
+                    if (messenger.isClosed()) {
+                        return Optional.empty();
+                    } else {
+                        map.remove(info);
+                        return Optional.of(messenger);
+                    }
+                })
                 .orElseGet(() -> {
-                    final var messenger = createSecureUdpMessenger(host, port, cryptoService);
-                    SECURE_UDP_MESSENGERS.put(info, messenger);
+                    final S messenger = creator.apply(info.getHost(), info.getPort(), cryptoService);
+                    map.put(info, messenger);
 
                     return messenger;
                 });

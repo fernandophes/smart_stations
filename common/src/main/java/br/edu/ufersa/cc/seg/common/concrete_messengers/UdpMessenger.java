@@ -24,8 +24,18 @@ public class UdpMessenger extends Messenger {
     }
 
     @Override
+    public InetAddress getHost() {
+        return destinationHost;
+    }
+
+    @Override
     public int getPort() {
         return socket.getLocalPort();
+    }
+
+    @Override
+    public boolean isClosed() {
+        return socket.isClosed();
     }
 
     @Override

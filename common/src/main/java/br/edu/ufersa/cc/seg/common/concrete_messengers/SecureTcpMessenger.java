@@ -3,6 +3,7 @@ package br.edu.ufersa.cc.seg.common.concrete_messengers;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -36,8 +37,18 @@ public class SecureTcpMessenger extends SecureMessenger {
         this(serverSocket.accept(), cryptoService);
     }
 
+    @Override
+    public InetAddress getHost() {
+        return socket.getInetAddress();
+    }
+
     public int getPort() {
         return socket.getLocalPort();
+    }
+
+    @Override
+    public boolean isClosed() {
+        return socket.isClosed();
     }
 
     @Override

@@ -2,6 +2,7 @@ package br.edu.ufersa.cc.seg.common.messengers;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,11 +55,15 @@ public abstract class Messenger implements Closeable {
         }
     }
 
+    public abstract InetAddress getHost();
+
     public abstract int getPort();
 
     public abstract void send(Message message);
 
     public abstract Message receive() throws IOException;
+
+    public abstract boolean isClosed();
 
     public Subscription subscribe(final Function<Message, Message> callback) {
         final var subscription = new Subscription(callback);

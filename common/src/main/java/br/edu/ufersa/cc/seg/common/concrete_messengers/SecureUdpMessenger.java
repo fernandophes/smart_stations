@@ -28,8 +28,18 @@ public class SecureUdpMessenger extends SecureMessenger {
     }
 
     @Override
+    public InetAddress getHost() {
+        return destinationHost;
+    }
+
+    @Override
     public int getPort() {
         return socket.getLocalPort();
+    }
+
+    @Override
+    public boolean isClosed() {
+        return socket.isClosed();
     }
 
     @Override
@@ -59,7 +69,7 @@ public class SecureUdpMessenger extends SecureMessenger {
         final var message = Message.fromBytes(messageAsBytes);
 
         log.info("Recebida mensagem do tipo {} de {}/{}:{}", message.getType(), packet.getAddress().getHostName(),
-                destinationHost.getHostAddress(),packet.getPort());
+                destinationHost.getHostAddress(), packet.getPort());
         return message;
     }
 
