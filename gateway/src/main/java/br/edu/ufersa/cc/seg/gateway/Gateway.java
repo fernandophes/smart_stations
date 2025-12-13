@@ -376,7 +376,19 @@ public class Gateway {
 
             final var cryptoService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
             final var symmetricMessenger = ServerMessengerFactory.secureUdp(cryptoService);
-            symmetricMessenger.subscribe(this::handleUdpRequest);
+            symmetricMessenger.subscribe(req -> {
+                final var resp = handleUdpRequest(req);
+
+                if (MessageType.ERROR.equals(resp.getType())) {
+                    try {
+                        symmetricMessenger.close();
+                    } catch (IOException e) {
+                        // Ignorar
+                    }
+                }
+
+                return resp;
+            });
             log.info("Aguardando mensagens simétricas...");
 
             return MessageFactory.ok()
