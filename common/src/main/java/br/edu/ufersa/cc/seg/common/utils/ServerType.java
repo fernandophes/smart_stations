@@ -8,6 +8,7 @@ public enum ServerType {
     DATACENTER_HTTP,
     GATEWAY_TCP,
     GATEWAY_UDP,
-    GATEWAY_HTTP;
+    GATEWAY_HTTP,
+    INTRUSION_DETECTOR_TCP;
 
 }

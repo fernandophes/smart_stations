@@ -70,6 +70,7 @@ public class Gateway {
     private Messenger locationUdpInternetMessenger;
     private Messenger authTcpMessenger;
     private Messenger edgeUdpMessenger;
+    private Messenger intrusionDetectorTcpMessenger;
     private MyHttpClient datacenterHttpClient;
 
     public Gateway(final EnvOrInputFactory envOrInputFactory) {
@@ -99,6 +100,7 @@ public class Gateway {
         connectToLocationInternetServer(locationInternetHost);
         locateAuthServer();
         locateEdgeServer();
+        locateIntrusionDetector();
 
         // HTTP
         locateDatacenterHttp();
@@ -320,7 +322,7 @@ public class Gateway {
         if (response.getType().equals(MessageType.ERROR)) {
             log.error("Erro ao registrar gateway/TCP: {}", response.getValues());
         } else {
-            log.info("TCP registrado no servidor de localização: {}");
+            log.info("TCP registrado no servidor de localização");
         }
     }
 
@@ -340,7 +342,7 @@ public class Gateway {
         if (response.getType().equals(MessageType.ERROR)) {
             log.error("Erro ao registrar gateway/UDP: {}", response.getValues());
         } else {
-            log.info("UDP registrado no servidor de localização: {}");
+            log.info("UDP registrado no servidor de localização");
         }
     }
 
@@ -495,6 +497,51 @@ public class Gateway {
     }
 
     @SneakyThrows
+    private void locateIntrusionDetector() {
+        final var request = new Message(MessageType.LOCATE_SERVER)
+                .withValue(Fields.SERVER_TYPE, ServerType.INTRUSION_DETECTOR_TCP);
+
+        do {
+            locationUdpIntranetMessenger.send(request);
+            final var response = locationUdpIntranetMessenger.receive();
+
+            if (response.getType().equals(MessageType.OK)) {
+                intrusionDetectorTcpMessenger = new MessengerWithFirewall(connectToIntrusionDetector(response), filterFirewall);
+            }
+
+            if (intrusionDetectorTcpMessenger == null) {
+                Thread.sleep(INTERVAL);
+            }
+        } while (intrusionDetectorTcpMessenger == null);
+    }
+
+    @SneakyThrows
+    private SecureMessenger connectToIntrusionDetector(final Message locationResponse) {
+        // Abrir messenger RSA temporário
+        final String rsaHost = locationResponse.getValue(Fields.HOST);
+        final int rsaPort = locationResponse.getValue(Fields.PORT);
+        final String rsaPublicKey = locationResponse.getValue(Fields.PUBLIC_KEY);
+        final var detectorRsaService = CryptoServiceFactory.publicRsa(rsaPublicKey);
+        final var rsaMessenger = MessengerFactory.secureTcp(rsaHost, rsaPort, detectorRsaService);
+
+        // Solicitar chave AES
+        final var request = new Message(MessageType.USE_SYMMETRIC);
+        rsaMessenger.send(request);
+        final var response = rsaMessenger.receive();
+
+        // Abrir messenger AES permanente
+        final String aesHost = response.getValue(Fields.HOST);
+        final int aesPort = response.getValue(Fields.PORT);
+        final String encryptionKey = response.getValue(Fields.ENCRYPTION_KEY);
+        final String hmacKey = response.getValue(Fields.HMAC_KEY);
+        final var detectorAesService = CryptoServiceFactory.aes(encryptionKey, hmacKey);
+        final var aesMessenger = MessengerFactory.secureTcp(aesHost, aesPort, detectorAesService);
+
+        rsaMessenger.close();
+        return aesMessenger;
+    }
+
+    @SneakyThrows
     private void locateDatacenterHttp() {
         log.info("Localizando Datacenter...");
 
@@ -549,6 +596,7 @@ public class Gateway {
     private void writeRules() {
         filterFirewall.permit(authTcpMessenger)
                 .permit(edgeUdpMessenger)
+                .permit(intrusionDetectorTcpMessenger)
                 .permit(ConnectionType.HTTP, datacenterHttpClient.getHost(), datacenterHttpClient.getPort())
                 .printRules();
     }
