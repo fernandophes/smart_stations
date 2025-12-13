@@ -77,6 +77,22 @@ services:
     networks:
       - intranet
 
+  intrusion-detector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE_NAME: intrusion_detector # <--- Nome exato da pasta do módulo
+    container_name: intrusion-detector
+    env_file:
+      - .env
+    environment:
+      - LOCATION_HOST=location-server-intranet
+    depends_on:
+      - datacenter
+    networks:
+      - intranet
+
   gateway:
     build:
       context: .
@@ -92,6 +108,7 @@ services:
     depends_on:
       - auth-server
       - edge-server
+      - intrusion-detector
     networks:
       - intranet
       - internet
@@ -176,21 +193,21 @@ services:
     networks:
       - internet
 
-  invalid-device:
+  intruder:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         MODULE_NAME: device # <--- Nome exato da pasta do módulo
-    container_name: invalid-device
+    container_name: intruder
     env_file:
       - .env
     environment:
-      - DEVICE_NAME=Semáforo
+      - DEVICE_NAME=Intruso
       - INTRUDER=true
       - LOCATION_HOST=location-server-internet
-      - IDENTIFIER=invalid-device-a
-      - SECRET=invalid-device123
+      - IDENTIFIER=intruder-a
+      - SECRET=intruder123
     depends_on:
       - gateway
     networks:
