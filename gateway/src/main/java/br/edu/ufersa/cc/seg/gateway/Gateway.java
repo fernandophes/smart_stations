@@ -506,7 +506,8 @@ public class Gateway {
             final var response = locationUdpIntranetMessenger.receive();
 
             if (response.getType().equals(MessageType.OK)) {
-                intrusionDetectorTcpMessenger = new MessengerWithFirewall(connectToIntrusionDetector(response), filterFirewall);
+                intrusionDetectorTcpMessenger = new MessengerWithFirewall(connectToIntrusionDetector(response),
+                        filterFirewall);
             }
 
             if (intrusionDetectorTcpMessenger == null) {
@@ -604,8 +605,19 @@ public class Gateway {
     @SneakyThrows
     private Message handleUdpRequest(final Message request) {
         if (MessageType.SEND_SNAPSHOT.equals(request.getType())) {
-            edgeUdpMessenger.send(request);
-            return edgeUdpMessenger.receive();
+            // Passar pelo detector de intrusão
+            intrusionDetectorTcpMessenger.send(request);
+            final var analysis = intrusionDetectorTcpMessenger.receive();
+
+            // Se a análise for positiva, repassar a mensagem
+            if (MessageType.OK.equals(analysis.getType())) {
+                edgeUdpMessenger.send(request);
+                return edgeUdpMessenger.receive();
+            } else {
+                // Senão, retornar erro
+                return MessageFactory.error("Mensagem rejeitada por suspeita de intrusão!");
+            }
+
         } else {
             return MessageFactory.error(Constants.UNSUPPORTED);
         }

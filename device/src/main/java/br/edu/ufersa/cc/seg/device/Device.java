@@ -1,5 +1,6 @@
 package br.edu.ufersa.cc.seg.device;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.InetAddress;
@@ -60,6 +61,13 @@ public class Device {
                         .withValue("token", token);
                 log.info("Leitura feita: {}", snapshot);
                 gatewayUdpMessenger.send(snapshot);
+
+                try {
+                    final var response = gatewayUdpMessenger.receive();
+                    log.info("Retorno: {}", response.toJson());
+                } catch (IOException e) {
+                    // Ignorar
+                }
             }
         };
 
