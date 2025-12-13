@@ -7,6 +7,7 @@ import java.net.InetAddress;
 
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
+import br.edu.ufersa.cc.seg.common.utils.ConnectionType;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,6 +22,11 @@ public class UdpMessenger extends Messenger {
         this.socket = new DatagramSocket();
         this.destinationHost = InetAddress.getByName(destinationHost);
         this.destinationPort = destinationPort;
+    }
+
+    @Override
+    public ConnectionType getConnectionType() {
+        return ConnectionType.UDP;
     }
 
     @Override

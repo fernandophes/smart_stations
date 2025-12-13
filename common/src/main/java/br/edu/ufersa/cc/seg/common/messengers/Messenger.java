@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
+import br.edu.ufersa.cc.seg.common.utils.ConnectionType;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +55,8 @@ public abstract class Messenger implements Closeable {
             thread.interrupt();
         }
     }
+
+    public abstract ConnectionType getConnectionType();
 
     public abstract InetAddress getHost();
 

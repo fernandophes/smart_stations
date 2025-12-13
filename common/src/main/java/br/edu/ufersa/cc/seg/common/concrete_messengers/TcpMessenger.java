@@ -9,6 +9,7 @@ import java.net.Socket;
 
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
+import br.edu.ufersa.cc.seg.common.utils.ConnectionType;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,6 +32,11 @@ public class TcpMessenger extends Messenger {
 
     public TcpMessenger(final ServerSocket serverSocket) throws IOException {
         this(serverSocket.accept());
+    }
+
+    @Override
+    public ConnectionType getConnectionType() {
+        return ConnectionType.TCP;
     }
 
     @Override

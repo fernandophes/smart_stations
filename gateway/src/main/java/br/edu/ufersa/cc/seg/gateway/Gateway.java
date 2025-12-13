@@ -33,6 +33,7 @@ import br.edu.ufersa.cc.seg.common.utils.Fields;
 import br.edu.ufersa.cc.seg.common.utils.InstanceType;
 import br.edu.ufersa.cc.seg.common.utils.MessageType;
 import br.edu.ufersa.cc.seg.common.utils.ServerType;
+import br.edu.ufersa.cc.seg.utils.MessengerWithFirewall;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import lombok.SneakyThrows;
@@ -251,44 +252,17 @@ public class Gateway {
 
     private void configureHttpServer(final MyHttpClient httpClient) {
         httpServer
-                .get("/api/snapshots", ctx -> {
-                    log.info("Requisição HTTP recebida");
-                    handleToken(ctx, InstanceType.CLIENT, (identifier, context) -> {
-                        // Obter o token
-                        final var token = context.header(Fields.TOKEN);
-
-                        // Chamar endpoint do datacenter
-                        final var response = httpClient.getSnapshotsAfter(token, identifier);
-
-                        try {
-                            // Descriptografar mensagem recebida pelo datacenter
-                            final var entityIn = response.getEntity();
-                            final var secureJsonIn = EntityUtils.toString(entityIn);
-                            final var secureMessageIn = SecureMessage.fromJson(secureJsonIn);
-
-                            final var messageAsBytes = httpClients.get(ServerType.DATACENTER_HTTP.name())
-                                    .decrypt(secureMessageIn);
-
-                            // Criptografar para reenviar ao cliente
-                            final var cryptoServiceOut = httpClients.get(identifier);
-                            final var secureMessageOut = cryptoServiceOut.encrypt(messageAsBytes);
-                            ctx.json(secureMessageOut);
-                        } catch (final IOException e) {
-                            // Ignorar
-                        }
-                    });
-                })
                 .get("/api/snapshots/{starting}", ctx -> {
                     log.info("Requisição HTTP recebida");
                     handleToken(ctx, InstanceType.CLIENT, (identifier, context) -> {
                         // Obter o token
                         final var token = context.header(Fields.TOKEN);
 
-                        // Chamar endpoint do datacenter
-                        final var timestamp = context.pathParam("starting");
-                        final var response = httpClient.getSnapshotsAfter(token, timestamp);
-
                         try {
+                            // Chamar endpoint do datacenter
+                            final var timestamp = context.pathParam("starting");
+                            final var response = httpClient.getSnapshotsAfter(token, timestamp);
+
                             // Descriptografar mensagem recebida pelo datacenter
                             final var entityIn = response.getEntity();
                             final var secureJsonIn = EntityUtils.toString(entityIn);
@@ -466,7 +440,7 @@ public class Gateway {
                 final var aesCryptoService = CryptoServiceFactory.aes(aesEncryptionKey, aesHmacKey);
                 final var aesMessenger = MessengerFactory.secureTcp(aesHost, aesPort, aesCryptoService);
 
-                authTcpMessenger = aesMessenger;
+                authTcpMessenger = new MessengerWithFirewall(aesMessenger, filterFirewall);
             }
 
             if (authTcpMessenger == null) {
@@ -485,7 +459,7 @@ public class Gateway {
             final var response = locationUdpIntranetMessenger.receive();
 
             if (response.getType().equals(MessageType.OK)) {
-                edgeUdpMessenger = connectToEdgeServer(response);
+                edgeUdpMessenger = new MessengerWithFirewall(connectToEdgeServer(response), filterFirewall);
             }
 
             if (edgeUdpMessenger == null) {
@@ -546,7 +520,8 @@ public class Gateway {
         // Abrir client HTTP
         final String host = locationResponse.getValue(Fields.HOST);
         final int port = locationResponse.getValue(Fields.PORT);
-        datacenterHttpClient = new MyHttpClient(host, port);
+        filterFirewall.permit(ConnectionType.HTTP, InetAddress.getByName(host), port);
+        datacenterHttpClient = new MyHttpClient(host, port, filterFirewall);
 
         // Configurar cifragem assimétrica
         final String httpPublicKey = locationResponse.getValue(Fields.PUBLIC_KEY);
@@ -572,8 +547,8 @@ public class Gateway {
     }
 
     private void writeRules() {
-        filterFirewall.permit(ConnectionType.TCP, authTcpMessenger)
-                .permit(ConnectionType.UDP, edgeUdpMessenger)
+        filterFirewall.permit(authTcpMessenger)
+                .permit(edgeUdpMessenger)
                 .permit(ConnectionType.HTTP, datacenterHttpClient.getHost(), datacenterHttpClient.getPort())
                 .printRules();
     }

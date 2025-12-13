@@ -8,6 +8,7 @@ import java.util.Set;
 import br.edu.ufersa.cc.seg.common.messengers.Messenger;
 import br.edu.ufersa.cc.seg.common.utils.ConnectionType;
 import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -21,6 +22,7 @@ public class FilterFirewall {
     @Setter(value = AccessLevel.PRIVATE)
     @Accessors(chain = true)
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+    @EqualsAndHashCode
     public static class Rule {
         private final ConnectionType connectionType;
         private final InetAddress host;
@@ -39,25 +41,24 @@ public class FilterFirewall {
         return this;
     }
 
-    public FilterFirewall addRule(final ConnectionType connectionType, final Messenger messenger,
-            final boolean allowed) {
-        return addRule(connectionType, messenger.getHost(), messenger.getPort(), allowed);
+    public FilterFirewall addRule(final Messenger messenger, final boolean allowed) {
+        return addRule(messenger.getConnectionType(), messenger.getHost(), messenger.getPort(), allowed);
     }
 
     public FilterFirewall permit(final ConnectionType connectionType, final InetAddress host, final int port) {
         return addRule(connectionType, host, port, true);
     }
 
-    public FilterFirewall permit(final ConnectionType connectionType, final Messenger messenger) {
-        return addRule(connectionType, messenger, true);
+    public FilterFirewall permit(final Messenger messenger) {
+        return addRule(messenger, true);
     }
 
     public FilterFirewall deny(final ConnectionType connectionType, final InetAddress host, final int port) {
         return addRule(connectionType, host, port, false);
     }
 
-    public FilterFirewall deny(final ConnectionType connectionType, final Messenger messenger) {
-        return addRule(connectionType, messenger, false);
+    public FilterFirewall deny(final Messenger messenger) {
+        return addRule(messenger, false);
     }
 
     public Optional<Rule> findRule(final ConnectionType connectionType, final InetAddress host, final int port) {
@@ -68,17 +69,26 @@ public class FilterFirewall {
                 .findFirst();
     }
 
-    public Optional<Rule> findRule(final ConnectionType connectionType, final Messenger messenger) {
-        return findRule(connectionType, messenger.getHost(), messenger.getPort());
+    public Optional<Rule> findRule(final Messenger messenger) {
+        return findRule(messenger.getConnectionType(), messenger.getHost(), messenger.getPort());
     }
 
     public boolean isAllowed(final ConnectionType connectionType, final InetAddress host, final int port) {
-        return findRule(connectionType, host, port).map(rule -> rule.allowed).orElse(false);
+        final var isAllowed = findRule(connectionType, host, port).map(rule -> rule.allowed).orElse(false);
+
+        if (isAllowed) {
+            log.info("✅ O firewall permitiu o acesso a {}/{}:{} via {}",
+                    host.getHostName(), host.getHostAddress(), port, connectionType);
+        } else {
+            log.error("🛑 O firewall bloqueou o acesso a {}/{}:{} via {}",
+                    host.getHostName(), host.getHostAddress(), port, connectionType);
+        }
+
+        return isAllowed;
     }
 
-    public boolean isAllowed(final ConnectionType connectionType, final Messenger messenger) {
-        return findRule(connectionType, messenger.getHost(), messenger.getPort()).map(rule -> rule.allowed)
-                .orElse(false);
+    public boolean isAllowed(final Messenger messenger) {
+        return isAllowed(messenger.getConnectionType(), messenger.getHost(), messenger.getPort());
     }
 
     public FilterFirewall removeRule(final ConnectionType connectionType, final InetAddress host, final int port) {
@@ -88,8 +98,8 @@ public class FilterFirewall {
         return this;
     }
 
-    public FilterFirewall removeRule(final ConnectionType connectionType, final Messenger messenger) {
-        return removeRule(connectionType, messenger.getHost(), messenger.getPort());
+    public FilterFirewall removeRule(final Messenger messenger) {
+        return removeRule(messenger.getConnectionType(), messenger.getHost(), messenger.getPort());
     }
 
     public FilterFirewall printRules() {

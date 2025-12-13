@@ -11,6 +11,7 @@ import br.edu.ufersa.cc.seg.common.crypto.CryptoService;
 import br.edu.ufersa.cc.seg.common.crypto.SecureMessage;
 import br.edu.ufersa.cc.seg.common.messengers.Message;
 import br.edu.ufersa.cc.seg.common.messengers.SecureMessenger;
+import br.edu.ufersa.cc.seg.common.utils.ConnectionType;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,6 +36,11 @@ public class SecureTcpMessenger extends SecureMessenger {
 
     public SecureTcpMessenger(final ServerSocket serverSocket, final CryptoService cryptoService) throws IOException {
         this(serverSocket.accept(), cryptoService);
+    }
+
+    @Override
+    public ConnectionType getConnectionType() {
+        return ConnectionType.TCP;
     }
 
     @Override
