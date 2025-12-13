@@ -19,7 +19,8 @@ public class Main {
 
         final var factory = new EnvOrInputFactory(new Scanner(input));
         final var name = factory.getString("DEVICE_NAME");
-        final var device = new Device(name, factory);
+        final var intruder = Boolean.valueOf(factory.getString("INTRUDER"));
+        final var device = new Device(name, factory, intruder);
 
         device.start();
         factory.close(); 

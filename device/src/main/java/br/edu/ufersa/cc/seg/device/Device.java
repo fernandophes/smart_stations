@@ -37,6 +37,7 @@ public class Device {
 
     private final String name;
     private final EnvOrInputFactory envOrInputFactory;
+    private final boolean intruder;
 
     private Messenger locationMessenger;
     private SecureMessenger gatewayUdpMessenger;
@@ -244,7 +245,11 @@ public class Device {
 
         for (final var element : Element.values()) {
             final var raw = RANDOM.nextDouble(element.getMin(), element.getMax());
-            final var scaled = BigDecimal.valueOf(raw).setScale(element.getScale(), RoundingMode.HALF_DOWN);
+            var scaled = BigDecimal.valueOf(raw).setScale(element.getScale(), RoundingMode.HALF_DOWN);
+
+            if (intruder) {
+                scaled = scaled.multiply(BigDecimal.valueOf(2));
+            }
 
             snapshot.withValue(element.name(), scaled);
         }

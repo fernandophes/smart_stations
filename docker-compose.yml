@@ -107,6 +107,7 @@ services:
       - .env
     environment:
       - DEVICE_NAME=Sensor
+      - INTRUDER=false
       - LOCATION_HOST=location-server-internet
       - IDENTIFIER=sensor-a
       - SECRET=sensor123
@@ -126,6 +127,7 @@ services:
       - .env
     environment:
       - DEVICE_NAME=Poste
+      - INTRUDER=false
       - LOCATION_HOST=location-server-internet
       - IDENTIFIER=post-a
       - SECRET=post123
@@ -145,6 +147,7 @@ services:
       - .env
     environment:
       - DEVICE_NAME=Semáforo
+      - INTRUDER=false
       - LOCATION_HOST=location-server-internet
       - IDENTIFIER=semaphor-a
       - SECRET=semaphor123
@@ -164,6 +167,7 @@ services:
       - .env
     environment:
       - DEVICE_NAME=Toten
+      - INTRUDER=false
       - LOCATION_HOST=location-server-internet
       - IDENTIFIER=toten-a
       - SECRET=toten123
@@ -183,6 +187,7 @@ services:
       - .env
     environment:
       - DEVICE_NAME=Semáforo
+      - INTRUDER=true
       - LOCATION_HOST=location-server-internet
       - IDENTIFIER=invalid-device-a
       - SECRET=invalid-device123
