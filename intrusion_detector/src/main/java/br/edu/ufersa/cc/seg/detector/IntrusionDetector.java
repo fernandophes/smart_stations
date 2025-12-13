@@ -28,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class IntrusionDetector {
 
+    private static final int TOLERANCE = 25;
+
     // Dependências
     private final TokenService tokenService;
     private final EnvOrInputFactory envOrInputFactory;
@@ -175,11 +177,15 @@ public class IntrusionDetector {
         for (final var element : Element.values()) {
             Optional.of((double) request.getValue(element.name()))
                     .ifPresent(value -> {
-                        if (value < element.getMin()) {
+                        if (value < element.getMin() || value > element.getMax()) {
                             mistakes.get(identifier).incrementAndGet();
                             log.warn("{} apresentou dados suspeitos!", identifier);
                         }
                     });
+        }
+
+        if (mistakes.get(identifier).get() > TOLERANCE) {
+            return MessageFactory.error();
         }
 
         return MessageFactory.ok();
