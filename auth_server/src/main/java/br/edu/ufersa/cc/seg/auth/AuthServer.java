@@ -180,6 +180,9 @@ public class AuthServer {
         final var toten = new InstanceDto().setType(InstanceType.DEVICE).setIdentifier("toten-a");
         instanceService.create(toten, "toten123");
 
+        final var intruder = new InstanceDto().setType(InstanceType.DEVICE).setIdentifier("intruder-a");
+        instanceService.create(intruder, "intruder123");
+
         final var browser = new InstanceDto().setType(InstanceType.CLIENT).setIdentifier("browser-a");
         instanceService.create(browser, "browser123");
     }
