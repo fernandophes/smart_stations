@@ -28,6 +28,7 @@
         <module>auth_server</module>
         <module>client</module>
         <module>gateway</module>
+        <module>intrusion_detector</module>
     </modules>
 
     <dependencies>
